@@ -363,6 +363,203 @@ export const aptitudeQuestions = [
         correctAnswer: "35",
         difficulty: "hard",
         category: "Reasoning"
+    },
+
+    // ==================== 15 SOFT SKILLS (46-60) ====================
+    {
+        id: 46,
+        question: "You are leading a project and two team members have a serious disagreement on the technical approach. Both approaches have merit. What is the BEST way to resolve this?",
+        options: [
+            "Impose your own decision as the leader to save time",
+            "Let them argue until one gives up",
+            "Facilitate a structured discussion, list pros/cons, and try to reach consensus or a hybrid solution",
+            "Ask upper management to decide"
+        ],
+        correctAnswer: "Facilitate a structured discussion, list pros/cons, and try to reach consensus or a hybrid solution",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 47,
+        question: "You receive a critical email from a client that is rude and accusatory, blaming your team for a delay that wasn't entirely your fault. What should be your FIRST response?",
+        options: [
+            "Reply immediately defending your team point by point",
+            "Ignore the email and hope they calm down",
+            "Take time to cool down, then reply professionally acknowledging their concern and promising to investigate",
+            "Forward the email to your manager and refuse to respond"
+        ],
+        correctAnswer: "Take time to cool down, then reply professionally acknowledging their concern and promising to investigate",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 48,
+        question: "Which of the following demonstrates active listening in a meeting?",
+        options: [
+            "Nodding while thinking about your own response",
+            "Interrupting to share a similar experience",
+            "Paraphrasing what the speaker said and asking clarifying questions",
+            "Silently taking notes without any verbal feedback"
+        ],
+        correctAnswer: "Paraphrasing what the speaker said and asking clarifying questions",
+        difficulty: "easy",
+        category: "Soft Skills"
+    },
+    {
+        id: 49,
+        question: "You have too many tasks and not enough time. According to prioritization best practices, which task should you do FIRST?",
+        options: [
+            "The easiest and quickest task",
+            "The task assigned by your favorite manager",
+            "The task that is both urgent AND important",
+            "The task that seems most interesting"
+        ],
+        correctAnswer: "The task that is both urgent AND important",
+        difficulty: "easy",
+        category: "Soft Skills"
+    },
+    {
+        id: 50,
+        question: "A team member consistently misses deadlines, affecting your work. You've already reminded them twice. What is the MOST professional next step?",
+        options: [
+            "Do their work for them to meet the deadline",
+            "Publicly call them out in the team chat",
+            "Schedule a private, respectful conversation to understand the root cause and offer support",
+            "Report them to HR immediately for poor performance"
+        ],
+        correctAnswer: "Schedule a private, respectful conversation to understand the root cause and offer support",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 51,
+        question: "During a presentation, someone asks a question you don't know the answer to. What is the BEST response?",
+        options: [
+            "Make up a plausible answer to avoid looking unprepared",
+            "Say 'I don't know' and move on without follow-up",
+            "Admit you don't know, offer to find out, and follow up after the meeting",
+            "Deflect by asking them why they need that information"
+        ],
+        correctAnswer: "Admit you don't know, offer to find out, and follow up after the meeting",
+        difficulty: "easy",
+        category: "Soft Skills"
+    },
+    {
+        id: 52,
+        question: "Your company is undergoing major restructuring. Many employees are anxious. As a team lead, what should you prioritize?",
+        options: [
+            "Hide information to prevent panic",
+            "Communicate transparently what you know, acknowledge uncertainty, and provide support resources",
+            "Only talk about positive aspects and ignore concerns",
+            "Tell everyone to stop worrying and focus on work"
+        ],
+        correctAnswer: "Communicate transparently what you know, acknowledge uncertainty, and provide support resources",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 53,
+        question: "You notice a colleague taking credit for your idea in a meeting. What is the MOST constructive immediate action?",
+        options: [
+            "Interrupt and publicly accuse them of stealing your idea",
+            "Stay quiet but resent them afterward",
+            "After the meeting, speak to them privately to clarify and suggest joint credit next time",
+            "Immediately report them to your manager for dishonesty"
+        ],
+        correctAnswer: "After the meeting, speak to them privately to clarify and suggest joint credit next time",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 54,
+        question: "Which of the following is a key element of emotional intelligence in the workplace?",
+        options: [
+            "Always agreeing with others to avoid conflict",
+            "Recognizing your own emotions and managing them effectively",
+            "Suppressing all emotions to remain purely logical",
+            "Focusing only on your own goals regardless of team feelings"
+        ],
+        correctAnswer: "Recognizing your own emotions and managing them effectively",
+        difficulty: "easy",
+        category: "Soft Skills"
+    },
+    {
+        id: 55,
+        question: "You are giving constructive feedback to a junior colleague. What is the BEST approach?",
+        options: [
+            "Start with harsh criticism to get their attention",
+            "Use the 'sandwich method' (praise - criticism - praise) genuinely and focus on specific behaviors, not personality",
+            "Compare them negatively to another team member",
+            "Email them a list of everything they did wrong"
+        ],
+        correctAnswer: "Use the 'sandwich method' (praise - criticism - praise) genuinely and focus on specific behaviors, not personality",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 56,
+        question: "You work in a diverse team with cultural differences. Some members are uncomfortable with direct criticism. How should you adapt?",
+        options: [
+            "Insist everyone accepts direct criticism because that's your style",
+            "Ignore the cultural differences and treat everyone the same",
+            "Learn about their preferences and adjust your communication style while maintaining honest feedback",
+            "Avoid giving any criticism to that team member entirely"
+        ],
+        correctAnswer: "Learn about their preferences and adjust your communication style while maintaining honest feedback",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 57,
+        question: "Your project is failing due to factors beyond your control. Your manager asks for a status update. What is the MOST professional response?",
+        options: [
+            "Blame another department for the failure",
+            "Present the facts honestly, explain what went wrong, and propose a recovery plan with realistic timelines",
+            "Downplay the severity to avoid looking bad",
+            "Resign immediately"
+        ],
+        correctAnswer: "Present the facts honestly, explain what went wrong, and propose a recovery plan with realistic timelines",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 58,
+        question: "Which of the following is a sign of a good work-life balance boundary?",
+        options: [
+            "Answering emails at 2 AM every night",
+            "Never checking work messages during a scheduled vacation",
+            "Working through lunch every day to catch up",
+            "Bringing your laptop to family dinners"
+        ],
+        correctAnswer: "Never checking work messages during a scheduled vacation",
+        difficulty: "easy",
+        category: "Soft Skills"
+    },
+    {
+        id: 59,
+        question: "You disagree with a decision your manager made. What is the MOST professional way to express your disagreement?",
+        options: [
+            "Complain to your coworkers about the manager's incompetence",
+            "Ignore the decision and do what you think is right",
+            "Request a private meeting, respectfully share your perspective with data, and accept the final decision",
+            "Send a strongly worded email to upper management"
+        ],
+        correctAnswer: "Request a private meeting, respectfully share your perspective with data, and accept the final decision",
+        difficulty: "medium",
+        category: "Soft Skills"
+    },
+    {
+        id: 60,
+        question: "You are new to a team. What is the BEST way to build trust with your colleagues quickly?",
+        options: [
+            "Brag about your past achievements",
+            "Keep to yourself and only speak when spoken to",
+            "Be reliable (meet deadlines), listen actively, show respect, and offer help when you can",
+            "Bring expensive gifts for everyone"
+        ],
+        correctAnswer: "Be reliable (meet deadlines), listen actively, show respect, and offer help when you can",
+        difficulty: "easy",
+        category: "Soft Skills"
     }
 ];
 
