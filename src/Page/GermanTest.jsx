@@ -811,13 +811,13 @@ const GermanTest = () => {
                         </div>
 
                         <div className="flex justify-between">
-                            <button
+                            {/* <button
                                 onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
                                 disabled={currentQuestion === 0}
                                 className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
-                            </button>
+                            </button> */}
 
                             <button
                                 onClick={handleNextQuestion}
