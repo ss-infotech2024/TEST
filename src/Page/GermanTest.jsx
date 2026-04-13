@@ -240,7 +240,7 @@ export const germanQuestions = [
     // Tricky Questions (26-29)
     {
         id: 26,
-        question: "Which is the correct sentence?",
+        question: "Which is the correct German translation of 'I come from India'?",
         options: ["Ich wohne aus Indien", "Ich komme in Indien", "Ich komme aus Indien", "Ich wohne aus Mumbai"],
         correctAnswer: "Ich komme aus Indien",
         category: "Tricky Questions",
