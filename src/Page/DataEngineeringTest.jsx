@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 // Advanced Data Engineering Questions (30 MCQs)
 export const dataEngineeringQuestions = [
-    // Section 1: SQL Advanced (1-10)
     {
         id: 1,
         question: "You need to find the 2nd highest salary per department. Which approach is best?",
@@ -98,8 +97,6 @@ export const dataEngineeringQuestions = [
         difficulty: "easy",
         explanation: "Indexes speed up SELECT, WHERE, and JOIN operations."
     },
-
-    // Section 2: PySpark Advanced (11-20)
     {
         id: 11,
         question: "Why is Spark faster than Hadoop MapReduce?",
@@ -190,8 +187,6 @@ export const dataEngineeringQuestions = [
         difficulty: "medium",
         explanation: "Schema inference requires scanning data, adding overhead."
     },
-
-    // Section 3: Python Advanced (21-25)
     {
         id: 21,
         question: "What is the output? x = [1,2,3]; print(x*2)",
@@ -237,8 +232,6 @@ export const dataEngineeringQuestions = [
         difficulty: "easy",
         explanation: "Pandas is the standard library for tabular data in Python."
     },
-
-    // Section 4: Big Data & Architecture (26-30)
     {
         id: 26,
         question: "Why is data partitioning important?",
@@ -298,12 +291,8 @@ const DataEngineeringTest = () => {
     const [userAnswers, setUserAnswers] = useState([]);
     const [timeLeft, setTimeLeft] = useState(1800);
     const [categoryFilter, setCategoryFilter] = useState('all');
-    const [fullscreen, setFullscreen] = useState(false);
     const [violationCount, setViolationCount] = useState(0);
     const [startTime, setStartTime] = useState(null);
-    const [submissionLoading, setSubmissionLoading] = useState(false);
-    const [submissionError, setSubmissionError] = useState('');
-    const [submissionSuccess, setSubmissionSuccess] = useState('');
     const [backendStatus, setBackendStatus] = useState('checking');
     const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -316,16 +305,9 @@ const DataEngineeringTest = () => {
     };
 
     const SUBMIT_ENDPOINT = 'https://ssinfotech-0x5s.onrender.com/api/submissions/submit';
-    const HEALTH_ENDPOINTS = [
-        'https://ssinfotech-0x5s.onrender.com/health',
-        'https://ssinfotech-0x5s.onrender.com/api/health'
-    ];
 
     const submitTestToBackend = async (submissionData) => {
         try {
-            setSubmissionLoading(true);
-            setSubmissionError('');
-            setSubmissionSuccess('');
             const response = await fetch(SUBMIT_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -333,85 +315,38 @@ const DataEngineeringTest = () => {
             });
             const result = await response.json();
             if (response.ok && result.success) {
-                setSubmissionSuccess('Your Data Engineering test results have been successfully recorded!');
                 setBackendStatus('connected');
-                return { ...result, synced: true };
-            } else {
-                throw new Error(result.error || 'Submission failed');
+                return { synced: true };
             }
+            throw new Error('Submission failed');
         } catch (error) {
-            setSubmissionError('Results saved locally (server offline)');
             setBackendStatus('disconnected');
-            return { synced: false, error: error.message };
-        } finally {
-            setSubmissionLoading(false);
+            return { synced: false };
         }
-    };
-
-    const testBackendConnection = async () => {
-        for (const endpoint of HEALTH_ENDPOINTS) {
-            try {
-                const response = await fetch(endpoint, { method: 'GET' });
-                if (response.ok) {
-                    setBackendStatus('connected');
-                    return true;
-                }
-            } catch (error) {
-                console.log(`Health check failed: ${endpoint}`);
-            }
-        }
-        setBackendStatus('disconnected');
-        return false;
     };
 
     const saveToLocalStorage = (submission, synced = false) => {
         try {
             const existing = JSON.parse(localStorage.getItem('dataEngineeringSubmissions') || '[]');
-            const existingSubmission = existing.find(sub => sub.submissionId === submission.submissionId);
-            if (existingSubmission) {
-                const updated = existing.map(sub =>
-                    sub.submissionId === submission.submissionId
-                        ? { ...submission, localSaveTime: new Date().toISOString(), syncedToBackend: synced }
-                        : sub
-                );
-                localStorage.setItem('dataEngineeringSubmissions', JSON.stringify(updated));
-            } else {
-                const newEntry = {
-                    ...submission,
-                    submissionId: submission.submissionId || generateSubmissionId(),
-                    localSaveTime: new Date().toISOString(),
-                    syncedToBackend: synced
-                };
-                existing.unshift(newEntry);
-                localStorage.setItem('dataEngineeringSubmissions', JSON.stringify(existing));
-            }
+            const newEntry = {
+                ...submission,
+                localSaveTime: new Date().toISOString(),
+                syncedToBackend: synced
+            };
+            existing.unshift(newEntry);
+            localStorage.setItem('dataEngineeringSubmissions', JSON.stringify(existing));
         } catch (e) {
             console.error('localStorage error:', e);
         }
     };
 
-    const syncPendingSubmissions = async () => {
-        const pending = JSON.parse(localStorage.getItem('dataEngineeringSubmissions') || '[]')
-            .filter(s => !s.syncedToBackend);
-        for (const sub of pending) {
-            const result = await submitTestToBackend(sub);
-            if (result.synced) {
-                const updated = JSON.parse(localStorage.getItem('dataEngineeringSubmissions') || '[]')
-                    .map(s => s.submissionId === sub.submissionId ? { ...s, syncedToBackend: true } : s);
-                localStorage.setItem('dataEngineeringSubmissions', JSON.stringify(updated));
-            }
-        }
-    };
-
     const enterFullscreen = () => {
         const elem = document.documentElement;
-        (elem.requestFullscreen || elem.webkitRequestFullscreen || elem.msRequestFullscreen)?.call(elem);
-        setFullscreen(true);
+        elem.requestFullscreen?.();
     };
 
     const exitFullscreen = () => {
-        (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen)?.call(document);
-        setFullscreen(false);
+        document.exitFullscreen?.();
     };
 
     const handleViolation = () => {
@@ -419,9 +354,6 @@ const DataEngineeringTest = () => {
         setViolationCount(newCount);
         if (newCount >= 3) {
             handleTestCompletion();
-            alert('Test terminated due to multiple security violations!');
-        } else {
-            alert(`Security Warning ${newCount}/3: Do not attempt to leave the test environment!`);
         }
     };
 
@@ -442,8 +374,7 @@ const DataEngineeringTest = () => {
         const contextMenuHandler = (e) => e.preventDefault();
         const beforeUnloadHandler = (e) => {
             e.preventDefault();
-            e.returnValue = 'Are you sure? Your test will be submitted.';
-            return e.returnValue;
+            e.returnValue = '';
         };
 
         document.addEventListener('visibilitychange', visibilityHandler);
@@ -454,8 +385,6 @@ const DataEngineeringTest = () => {
         window.addEventListener('beforeunload', beforeUnloadHandler);
 
         enterFullscreen();
-        document.body.style.userSelect = 'none';
-        document.body.style.webkitUserSelect = 'none';
 
         return () => {
             document.removeEventListener('visibilitychange', visibilityHandler);
@@ -464,8 +393,6 @@ const DataEngineeringTest = () => {
             document.removeEventListener('keydown', keydownHandler);
             document.removeEventListener('contextmenu', contextMenuHandler);
             window.removeEventListener('beforeunload', beforeUnloadHandler);
-            document.body.style.userSelect = '';
-            document.body.style.webkitUserSelect = '';
             if (testCompleted) exitFullscreen();
         };
     }, [testStarted, testCompleted, violationCount]);
@@ -477,27 +404,20 @@ const DataEngineeringTest = () => {
         return () => clearInterval(timer);
     }, [testStarted, testCompleted, timeLeft]);
 
-    useEffect(() => {
-        testBackendConnection();
-        const interval = setInterval(() => {
-            testBackendConnection();
-            syncPendingSubmissions();
-        }, 30000);
-        return () => clearInterval(interval);
-    }, []);
-
     const validateUserInfo = () => {
-        if (!userName.trim()) return alert('Please enter your name'), false;
-        if (!email.trim()) return alert('Please enter your email'), false;
-        if (!phone.trim()) return alert('Please enter your phone number'), false;
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('Please enter a valid email address'), false;
-        if (!/^[0-9+\-\s()]{10,}$/.test(phone)) return alert('Please enter a valid phone number'), false;
+        if (!userName.trim()) return false;
+        if (!email.trim()) return false;
+        if (!phone.trim()) return false;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+        if (!/^[0-9+\-\s()]{10,}$/.test(phone)) return false;
         return true;
     };
 
-    const handleStartTest = async () => {
-        if (!validateUserInfo()) return;
-        await testBackendConnection();
+    const handleStartTest = () => {
+        if (!validateUserInfo()) {
+            alert('Please fill all fields correctly');
+            return;
+        }
         setTestStarted(true);
         setStartTime(Date.now());
         setUserAnswers([]);
@@ -520,7 +440,6 @@ const DataEngineeringTest = () => {
             selectedAnswer,
             correctAnswer: currentQ.correctAnswer,
             isCorrect,
-            difficulty: currentQ.difficulty,
             category: currentQ.category,
             explanation: currentQ.explanation
         }]);
@@ -550,7 +469,6 @@ const DataEngineeringTest = () => {
             totalQuestions: filteredQuestions.length,
             userAnswers,
             violationCount,
-            categoryFilter,
             timeTaken,
             submittedAt: new Date().toISOString(),
             submissionId: generateSubmissionId()
@@ -572,35 +490,20 @@ const DataEngineeringTest = () => {
     };
 
     const resetTest = () => {
-        setUserName(''); setEmail(''); setPhone('');
-        setTestStarted(false); setTestCompleted(false);
-        setCurrentQuestion(0); setSelectedAnswer(''); setScore(0);
-        setUserAnswers([]); setTimeLeft(1800); setCategoryFilter('all');
-        setViolationCount(0); setSubmissionError(''); setSubmissionSuccess('');
-        setBackendStatus('checking'); setHasSubmitted(false);
-        testBackendConnection();
+        setUserName('');
+        setEmail('');
+        setPhone('');
+        setTestStarted(false);
+        setTestCompleted(false);
+        setCurrentQuestion(0);
+        setSelectedAnswer('');
+        setScore(0);
+        setUserAnswers([]);
+        setTimeLeft(1800);
+        setCategoryFilter('all');
+        setViolationCount(0);
+        setHasSubmitted(false);
     };
-
-    const getDifficultyColor = (d) =>
-        d === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
-
-    const getCategoryColor = (c) => {
-        const map = {
-            'SQL Advanced': 'bg-blue-50 text-blue-700 border-blue-200',
-            'PySpark Advanced': 'bg-purple-50 text-purple-700 border-purple-200',
-            'Python Advanced': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-            'Big Data & Architecture': 'bg-teal-50 text-teal-700 border-teal-200',
-        };
-        return map[c] || 'bg-gray-50 text-gray-700 border-gray-200';
-    };
-
-    const getBackendStatusColor = () =>
-        backendStatus === 'connected' ? 'bg-emerald-50 text-emerald-700' :
-        backendStatus === 'disconnected' ? 'bg-amber-50 text-amber-700' : 'bg-gray-50 text-gray-700';
-
-    const getBackendStatusText = () =>
-        backendStatus === 'connected' ? 'Backend Connected' :
-        backendStatus === 'disconnected' ? 'Backend Offline - Local Save Only' : 'Checking Connection...';
 
     const getCategoryCounts = () => {
         const counts = {};
@@ -612,183 +515,68 @@ const DataEngineeringTest = () => {
 
     const categoryCounts = getCategoryCounts();
 
-    // Icon components (simple SVG replacements for emojis)
-    const IconDatabase = () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="12" cy="6" rx="8" ry="3"></ellipse>
-            <path d="M4 6v12c0 1.66 2.69 3 8 3s8-1.34 8-3V6"></path>
-            <path d="M4 12c0 1.66 2.69 3 8 3s8-1.34 8-3"></path>
-        </svg>
-    );
+    const toolsData = [
+        { name: 'Apache Spark', icon: '⚡', description: 'Unified analytics engine for large-scale data processing' },
+        { name: 'Databricks', icon: '🔷', description: 'Unified data analytics platform' },
+        { name: 'Delta Lake', icon: '📊', description: 'Open format storage layer' },
+        { name: 'SQL Analytics', icon: '📈', description: 'Advanced query optimization' }
+    ];
 
-    const IconClock = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-    );
-
-    const IconCheckCircle = () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 16 16 12 12 8"></polyline>
-            <line x1="8" y1="12" x2="16" y2="12"></line>
-        </svg>
-    );
-
-    const IconShield = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-        </svg>
-    );
-
-    const IconBarChart = () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-        </svg>
-    );
-
-    const IconUser = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-        </svg>
-    );
-
-    const IconMail = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-        </svg>
-    );
-
-    const IconPhone = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
-        </svg>
-    );
-
-    const IconFilter = () => (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="22 3 2 3 10 13 10 21 14 18 14 13 22 3"></polygon>
-        </svg>
-    );
-
-    const IconArrowRight = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-    );
-
-    const IconPrinter = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M6 9V2h12v7"></path>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-            <path d="M6 14h12v8H6z"></path>
-        </svg>
-    );
-
-    const IconRepeat = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M17 2l4 4-4 4"></path>
-            <path d="M3 12v-2a4 4 0 0 1 4-4h14"></path>
-            <path d="M7 22l-4-4 4-4"></path>
-            <path d="M21 12v2a4 4 0 0 1-4 4H3"></path>
-        </svg>
-    );
-
-    // Start Screen
     if (!testStarted && !testCompleted) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-                {/* Header bar */}
-                <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-                    <div className="max-w-5xl mx-auto px-6 py-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                                <IconDatabase />
-                            </div>
-                            <span className="font-semibold text-gray-900">Data Engineering Assessment</span>
-                        </div>
-                    </div>
-                </div>
+            <div className="min-h-screen bg-gray-50">
+    
 
-                <div className="max-w-4xl mx-auto px-6 py-12">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="max-w-6xl mx-auto px-6 py-12">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="p-8">
                             <div className="text-center mb-8">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm mb-4">
-                                    <IconBarChart />
-                                    <span>Advanced Certification</span>
-                                </div>
+                               
                                 <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                                    Data Engineering Proficiency Test
+                                    Data Engineering 
                                 </h1>
                                 <p className="text-gray-500 text-lg">
-                                    SQL • PySpark • Python • Big Data Architecture
+                                    Master SQL, PySpark, Python & Big Data Architecture
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <span className="flex items-center gap-2">
-                                            <IconUser />
-                                            Full Name
-                                        </span>
-                                    </label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                                     <input 
                                         type="text" 
                                         value={userName} 
                                         onChange={e => setUserName(e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="John Doe" 
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <span className="flex items-center gap-2">
-                                            <IconMail />
-                                            Email Address
-                                        </span>
-                                    </label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                                     <input 
                                         type="email" 
                                         value={email} 
                                         onChange={e => setEmail(e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="john@example.com" 
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <span className="flex items-center gap-2">
-                                            <IconPhone />
-                                            Phone Number
-                                        </span>
-                                    </label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                                     <input 
                                         type="tel" 
                                         value={phone} 
                                         onChange={e => setPhone(e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="+1 (555) 000-0000" 
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <span className="flex items-center gap-2">
-                                            <IconFilter />
-                                            Question Set
-                                        </span>
-                                    </label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Question Set</label>
                                     <select 
                                         value={categoryFilter} 
                                         onChange={e => setCategoryFilter(e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     >
                                         <option value="all">All Categories ({dataEngineeringQuestions.length} Questions)</option>
                                         {Object.entries(categoryCounts).map(([category, count]) => (
@@ -800,98 +588,84 @@ const DataEngineeringTest = () => {
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                                {toolsData.map((tool, idx) => (
+                                    <div key={idx} className="bg-gray-50 rounded-lg p-4 text-center border border-gray-100">
+                                        <div className="text-2xl mb-2">{tool.icon}</div>
+                                        <div className="font-medium text-gray-900 text-sm">{tool.name}</div>
+                                        <div className="text-xs text-gray-500 mt-1">{tool.description}</div>
+                                    </div>
+                                ))}
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <IconShield />
-                                        <h3 className="font-semibold text-amber-800">Security Measures</h3>
+                                        <span>🛡️</span>
+                                        <h3 className="font-semibold text-amber-800">Security</h3>
                                     </div>
                                     <ul className="space-y-2 text-sm text-amber-700">
-                                        <li className="flex items-center gap-2">• Fullscreen mode enforced</li>
-                                        <li className="flex items-center gap-2">• Tab switching prohibited</li>
-                                        <li className="flex items-center gap-2">• Developer tools disabled</li>
-                                        <li className="flex items-center gap-2">• 3 violations will auto-submit</li>
+                                        <li>• Fullscreen mode enforced</li>
+                                        <li>• Tab switching prohibited</li>
+                                        <li>• 3 violations auto-submit</li>
                                     </ul>
                                 </div>
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <IconClock />
-                                        <h3 className="font-semibold text-blue-800">Test Information</h3>
+                                        <span>⏱️</span>
+                                        <h3 className="font-semibold text-blue-800">Test Details</h3>
                                     </div>
                                     <ul className="space-y-2 text-sm text-blue-700">
-                                        <li className="flex items-center gap-2">• Total Questions: {filteredQuestions.length} MCQs</li>
-                                        <li className="flex items-center gap-2">• Time Limit: 30 minutes</li>
-                                        <li className="flex items-center gap-2">• No negative marking</li>
-                                        <li className="flex items-center gap-2">• Results saved automatically</li>
+                                        <li>• {filteredQuestions.length} MCQs</li>
+                                        <li>• 30 minutes time limit</li>
+
                                     </ul>
                                 </div>
                             </div>
 
-                            {backendStatus === 'disconnected' && (
-                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-                                    <p className="text-amber-700 text-sm flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
-                                        Backend offline. Results will be saved locally and synced when connection resumes.
-                                    </p>
-                                </div>
-                            )}
-
                             <button
                                 onClick={handleStartTest}
-                                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                                disabled={backendStatus === 'checking'}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
                             >
-                                {backendStatus === 'checking' ? 'Checking Connection...' : (
-                                    <>
-                                        Start Assessment
-                                        <IconArrowRight />
-                                    </>
-                                )}
+                                Start Assessment →
                             </button>
 
-                            <div className="mt-6 text-center">
-                                <span className={`inline-flex items-center gap-2 text-xs px-2 py-1 rounded ${getBackendStatusColor()}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${backendStatus === 'connected' ? 'bg-emerald-500' : backendStatus === 'disconnected' ? 'bg-amber-500' : 'bg-gray-400'}`}></span>
-                                    {getBackendStatusText()}
+                            <div className="mt-6 text-center text-xs text-gray-400">
+                                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded ${backendStatus === 'connected' ? 'text-green-600' : 'text-amber-600'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${backendStatus === 'connected' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                                    {backendStatus === 'connected' ? 'Ready' : backendStatus === 'disconnected' ? 'Offline Mode' : 'Connecting...'}
                                 </span>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="text-center text-gray-400 text-xs mt-8">
-                        <p>© Data Engineering Assessment Platform | Secure Testing Environment</p>
                     </div>
                 </div>
             </div>
         );
     }
 
-    // Test In Progress
     if (testStarted && !testCompleted) {
         const currentQ = filteredQuestions[currentQuestion];
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-                <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 z-20">
+            <div className="min-h-screen bg-gray-50">
+                <div className="sticky top-0 bg-white border-b border-gray-200 z-20">
                     <div className="max-w-4xl mx-auto px-6 py-3">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center">
-                                    <IconDatabase />
-                                </div>
-                                <span className="font-medium text-gray-900">Data Engineering Test</span>
+                                <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">DB</div>
+                                <span className="font-medium text-gray-900">Assessment</span>
                                 <span className="text-xs text-gray-400 ml-2">{userName}</span>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 text-sm">
-                                    <IconClock />
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-2">
+                                    <span>⏱️</span>
                                     <span className={timeLeft < 300 ? "text-red-600 font-medium" : "text-gray-600"}>
                                         {formatTime(timeLeft)}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <IconShield />
+                                    <span>🛡️</span>
                                     <span className="text-sm">
-                                        <span className={violationCount >= 2 ? "text-red-600 font-medium" : "text-gray-600"}>
+                                        <span className={violationCount >= 2 ? "text-red-600" : "text-gray-600"}>
                                             {violationCount}
                                         </span>
                                         <span className="text-gray-400">/3</span>
@@ -903,30 +677,30 @@ const DataEngineeringTest = () => {
                 </div>
 
                 <div className="max-w-3xl mx-auto px-6 py-10">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="p-8">
                             <div className="flex items-center justify-between mb-6">
-                                <div className="flex gap-2 flex-wrap">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryColor(currentQ.category)}`}>
+                                <div className="flex gap-2">
+                                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                                         {currentQ.category}
                                     </span>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(currentQ.difficulty)}`}>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${currentQ.difficulty === 'medium' ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
                                         {currentQ.difficulty.toUpperCase()}
                                     </span>
                                 </div>
                                 <div className="text-sm text-gray-400">
-                                    Question {currentQuestion + 1} of {filteredQuestions.length}
+                                    {currentQuestion + 1} / {filteredQuestions.length}
                                 </div>
                             </div>
 
                             <div className="w-full bg-gray-100 rounded-full h-1 mb-8">
                                 <div 
-                                    className="bg-gradient-to-r from-blue-600 to-purple-600 h-1 rounded-full transition-all duration-300" 
+                                    className="bg-blue-600 h-1 rounded-full transition-all" 
                                     style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }}
                                 ></div>
                             </div>
 
-                            <h3 className="text-xl font-semibold text-gray-900 mb-6 leading-relaxed">
+                            <h3 className="text-xl font-semibold text-gray-900 mb-6">
                                 {currentQ.question}
                             </h3>
 
@@ -935,9 +709,9 @@ const DataEngineeringTest = () => {
                                     <button
                                         key={index}
                                         onClick={() => handleAnswerSelect(option)}
-                                        className={`w-full text-left p-4 rounded-lg border transition-all duration-150 ${
+                                        className={`w-full text-left p-4 rounded-lg border transition-all ${
                                             selectedAnswer === option
-                                                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                                                ? 'border-blue-500 bg-blue-50'
                                                 : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                                         }`}
                                     >
@@ -949,7 +723,7 @@ const DataEngineeringTest = () => {
                                             }`}>
                                                 {String.fromCharCode(65 + index)}
                                             </div>
-                                            <span className="text-gray-700 flex-1">{option}</span>
+                                            <span className="text-gray-700">{option}</span>
                                         </div>
                                     </button>
                                 ))}
@@ -958,7 +732,7 @@ const DataEngineeringTest = () => {
                             <button
                                 onClick={handleNextQuestion}
                                 disabled={!selectedAnswer}
-                                className="w-full mt-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:from-blue-700 hover:to-purple-700"
+                                className="w-full mt-8 bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
                             >
                                 {currentQuestion === filteredQuestions.length - 1 ? 'Submit Test' : 'Next Question'}
                             </button>
@@ -966,103 +740,88 @@ const DataEngineeringTest = () => {
                     </div>
 
                     <div className="text-center text-xs text-gray-400 mt-6">
-                        <p>Security active • Do not switch tabs or exit fullscreen</p>
+                        Security active • Do not switch tabs or exit fullscreen
                     </div>
                 </div>
             </div>
         );
     }
 
-    // Results Screen
     if (testCompleted) {
         const percentage = ((score / filteredQuestions.length) * 100).toFixed(1);
+        const passed = score >= filteredQuestions.length * 0.7;
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-                <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-                    <div className="max-w-6xl mx-auto px-6 py-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                                <IconDatabase />
-                            </div>
+            <div className="min-h-screen bg-gray-50">
+                <div className="border-b border-gray-200 bg-white">
+                    <div className="max-w-5xl mx-auto px-6 py-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">DB</div>
                             <span className="font-semibold text-gray-900">Assessment Results</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="max-w-5xl mx-auto px-6 py-12">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="p-8 text-center border-b border-gray-100">
-                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <IconCheckCircle />
+                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                {passed ? '✓' : '📋'}
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900">Assessment Completed</h1>
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {passed ? 'Certification Achieved' : 'Assessment Completed'}
+                            </h1>
                             <p className="text-gray-500 mt-1">Congratulations, {userName}!</p>
                         </div>
 
-                        {submissionSuccess && (
-                            <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 m-6 rounded">
-                                <p className="text-emerald-700 text-sm">{submissionSuccess}</p>
-                            </div>
-                        )}
-                        {submissionError && (
-                            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 m-6 rounded">
-                                <p className="text-amber-700 text-sm">{submissionError}</p>
-                            </div>
-                        )}
-
-                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center p-10 m-6 rounded-xl">
-                            <h2 className="text-lg font-medium opacity-90 mb-2">Your Score</h2>
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center p-10 m-6 rounded-xl">
+                            <h2 className="text-lg font-medium opacity-90 mb-2">Final Score</h2>
                             <div className="text-6xl font-bold mb-2">{score} / {filteredQuestions.length}</div>
                             <div className="text-2xl opacity-90">{percentage}%</div>
-                            <div className="mt-4 text-sm opacity-75 flex items-center justify-center gap-2">
-                                <IconClock />
-                                Time taken: {formatTime(1800 - timeLeft)}
+                            <div className="mt-4 text-sm opacity-75">
+                                ⏱️ Time: {formatTime(1800 - timeLeft)}
                             </div>
+                            {passed && (
+                                <div className="mt-4 inline-block bg-white/20 rounded-full px-4 py-1 text-sm">
+                                    🎓 Data Engineering Certified
+                                </div>
+                            )}
                         </div>
 
                         <div className="p-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Question Review</h3>
-                            <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Answer Review</h3>
+                            <div className="space-y-3">
                                 {userAnswers.map((answer, index) => (
                                     <div 
                                         key={index} 
-                                        className={`border rounded-lg p-5 ${
+                                        className={`border rounded-lg p-4 ${
                                             answer.isCorrect 
-                                                ? 'bg-emerald-50 border-emerald-200' 
+                                                ? 'bg-green-50 border-green-200' 
                                                 : 'bg-red-50 border-red-200'
                                         }`}
                                     >
-                                        <div className="flex justify-between items-start gap-4">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                                        answer.isCorrect ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'
-                                                    }`}>
-                                                        {index + 1}
-                                                    </span>
-                                                    <span className="font-medium text-gray-900">{answer.question}</span>
+                                        <div className="flex gap-3">
+                                            <div className="flex-shrink-0">
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                                    answer.isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                                                }`}>
+                                                    {index + 1}
                                                 </div>
-                                                <div className="mt-2 text-sm space-y-1">
-                                                    <p><span className="text-gray-500">Your answer:</span> {answer.selectedAnswer || 'Not answered'}</p>
-                                                    <p><span className="text-gray-500">Correct answer:</span> <span className="font-medium text-gray-900">{answer.correctAnswer}</span></p>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-gray-900 text-sm">{answer.question}</p>
+                                                <div className="mt-2 text-sm">
+                                                    <p><span className="text-gray-500">You:</span> {answer.selectedAnswer}</p>
+                                                    <p><span className="text-gray-500">Correct:</span> <span className="font-medium">{answer.correctAnswer}</span></p>
                                                     {answer.explanation && (
-                                                        <p className="mt-2 text-gray-600 text-sm bg-white/50 p-2 rounded">
-                                                            {answer.explanation}
+                                                        <p className="mt-2 text-gray-600 text-xs bg-white/50 p-2 rounded">
+                                                            💡 {answer.explanation}
                                                         </p>
                                                     )}
                                                 </div>
                                             </div>
-                                            <div>
-                                                {answer.isCorrect ? (
-                                                    <IconCheckCircle />
-                                                ) : (
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500">
-                                                        <circle cx="12" cy="12" r="10"></circle>
-                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                    </svg>
-                                                )}
+                                            <div className="text-lg">
+                                                {answer.isCorrect ? '✓' : '✗'}
                                             </div>
                                         </div>
                                     </div>
@@ -1070,20 +829,18 @@ const DataEngineeringTest = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-gray-100 flex flex-col sm:flex-row gap-4 justify-center">
+                        <div className="p-6 border-t border-gray-100 flex gap-4 justify-center">
                             <button 
                                 onClick={resetTest} 
-                                className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-8 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-8 rounded-lg transition-colors"
                             >
-                                <IconRepeat />
-                                Take Again
+                                ⟳ Take Again
                             </button>
                             <button 
                                 onClick={() => window.print()} 
-                                className="border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-2.5 px-8 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                className="border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-2.5 px-8 rounded-lg transition-colors"
                             >
-                                <IconPrinter />
-                                Print Results
+                                🖨️ Print Results
                             </button>
                         </div>
                     </div>
