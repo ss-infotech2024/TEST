@@ -296,7 +296,7 @@ const DataEngineeringTest = () => {
     const [testStarted, setTestStarted] = useState(false);
     const [testCompleted, setTestCompleted] = useState(false);
     const [userAnswers, setUserAnswers] = useState([]);
-    const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes
+    const [timeLeft, setTimeLeft] = useState(1800);
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [fullscreen, setFullscreen] = useState(false);
     const [violationCount, setViolationCount] = useState(0);
@@ -315,10 +315,10 @@ const DataEngineeringTest = () => {
         return 'data-eng-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     };
 
-    const SUBMIT_ENDPOINT = 'https://ssinfotech-backend-k03q.onrender.com/api/submissions/submit';
+    const SUBMIT_ENDPOINT = 'https://ssinfotech-0x5s.onrender.com/api/submissions/submit';
     const HEALTH_ENDPOINTS = [
-        'https://ssinfotech-backend-k03q.onrender.com/health',
-        'https://ssinfotech-backend-k03q.onrender.com/api/health'
+        'https://ssinfotech-0x5s.onrender.com/health',
+        'https://ssinfotech-0x5s.onrender.com/api/health'
     ];
 
     const submitTestToBackend = async (submissionData) => {
@@ -582,25 +582,25 @@ const DataEngineeringTest = () => {
     };
 
     const getDifficultyColor = (d) =>
-        d === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
+        d === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
     const getCategoryColor = (c) => {
         const map = {
-            'SQL Advanced': 'bg-blue-100 text-blue-800',
-            'PySpark Advanced': 'bg-purple-100 text-purple-800',
-            'Python Advanced': 'bg-indigo-100 text-indigo-800',
-            'Big Data & Architecture': 'bg-teal-100 text-teal-800',
+            'SQL Advanced': 'bg-blue-50 text-blue-700 border-blue-200',
+            'PySpark Advanced': 'bg-purple-50 text-purple-700 border-purple-200',
+            'Python Advanced': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            'Big Data & Architecture': 'bg-teal-50 text-teal-700 border-teal-200',
         };
-        return map[c] || 'bg-gray-100 text-gray-800';
+        return map[c] || 'bg-gray-50 text-gray-700 border-gray-200';
     };
 
     const getBackendStatusColor = () =>
-        backendStatus === 'connected' ? 'bg-green-100 text-green-800' :
-        backendStatus === 'disconnected' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800';
+        backendStatus === 'connected' ? 'bg-emerald-50 text-emerald-700' :
+        backendStatus === 'disconnected' ? 'bg-amber-50 text-amber-700' : 'bg-gray-50 text-gray-700';
 
     const getBackendStatusText = () =>
-        backendStatus === 'connected' ? '' :
-        backendStatus === 'disconnected' ? 'Backend Offline' : 'Checking Status...';
+        backendStatus === 'connected' ? 'Backend Connected' :
+        backendStatus === 'disconnected' ? 'Backend Offline - Local Save Only' : 'Checking Connection...';
 
     const getCategoryCounts = () => {
         const counts = {};
@@ -612,89 +612,254 @@ const DataEngineeringTest = () => {
 
     const categoryCounts = getCategoryCounts();
 
-    // ====================== UI RENDERING ======================
+    // Icon components (simple SVG replacements for emojis)
+    const IconDatabase = () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <ellipse cx="12" cy="6" rx="8" ry="3"></ellipse>
+            <path d="M4 6v12c0 1.66 2.69 3 8 3s8-1.34 8-3V6"></path>
+            <path d="M4 12c0 1.66 2.69 3 8 3s8-1.34 8-3"></path>
+        </svg>
+    );
+
+    const IconClock = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+    );
+
+    const IconCheckCircle = () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 16 16 12 12 8"></polyline>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+        </svg>
+    );
+
+    const IconShield = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+    );
+
+    const IconBarChart = () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+    );
+
+    const IconUser = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+    );
+
+    const IconMail = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+        </svg>
+    );
+
+    const IconPhone = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+    );
+
+    const IconFilter = () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="22 3 2 3 10 13 10 21 14 18 14 13 22 3"></polygon>
+        </svg>
+    );
+
+    const IconArrowRight = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+    );
+
+    const IconPrinter = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 9V2h12v7"></path>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <path d="M6 14h12v8H6z"></path>
+        </svg>
+    );
+
+    const IconRepeat = () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17 2l4 4-4 4"></path>
+            <path d="M3 12v-2a4 4 0 0 1 4-4h14"></path>
+            <path d="M7 22l-4-4 4-4"></path>
+            <path d="M21 12v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+    );
 
     // Start Screen
     if (!testStarted && !testCompleted) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow-xl p-8">
-                        <div className="text-center mb-6">
-                            <div className="flex justify-center gap-1 mb-4">
-                                <div className="h-3 w-16 rounded bg-blue-600"></div>
-                                <div className="h-3 w-16 rounded bg-indigo-600"></div>
-                                <div className="h-3 w-16 rounded bg-purple-600"></div>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+                {/* Header bar */}
+                <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+                    <div className="max-w-5xl mx-auto px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                <IconDatabase />
                             </div>
-                            <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                                💾 Advanced Data Engineering Test
-                            </h1>
-                            <p className="text-gray-600">SQL + PySpark + Python + Big Data Architecture (30 MCQs)</p>
+                            <span className="font-semibold text-gray-900">Data Engineering Assessment</span>
                         </div>
+                    </div>
+                </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div>
-                                <label className="block text-lg font-medium text-gray-700 mb-2">Full Name *</label>
-                                <input type="text" value={userName} onChange={e => setUserName(e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="John Doe" />
+                <div className="max-w-4xl mx-auto px-6 py-12">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-8">
+                            <div className="text-center mb-8">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm mb-4">
+                                    <IconBarChart />
+                                    <span>Advanced Certification</span>
+                                </div>
+                                <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                                    Data Engineering Proficiency Test
+                                </h1>
+                                <p className="text-gray-500 text-lg">
+                                    SQL • PySpark • Python • Big Data Architecture
+                                </p>
                             </div>
-                            <div>
-                                <label className="block text-lg font-medium text-gray-700 mb-2">Email *</label>
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="john@example.com" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <span className="flex items-center gap-2">
+                                            <IconUser />
+                                            Full Name
+                                        </span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        value={userName} 
+                                        onChange={e => setUserName(e.target.value)}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                                        placeholder="John Doe" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <span className="flex items-center gap-2">
+                                            <IconMail />
+                                            Email Address
+                                        </span>
+                                    </label>
+                                    <input 
+                                        type="email" 
+                                        value={email} 
+                                        onChange={e => setEmail(e.target.value)}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                                        placeholder="john@example.com" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <span className="flex items-center gap-2">
+                                            <IconPhone />
+                                            Phone Number
+                                        </span>
+                                    </label>
+                                    <input 
+                                        type="tel" 
+                                        value={phone} 
+                                        onChange={e => setPhone(e.target.value)}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
+                                        placeholder="+1 (555) 000-0000" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <span className="flex items-center gap-2">
+                                            <IconFilter />
+                                            Question Set
+                                        </span>
+                                    </label>
+                                    <select 
+                                        value={categoryFilter} 
+                                        onChange={e => setCategoryFilter(e.target.value)}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    >
+                                        <option value="all">All Categories ({dataEngineeringQuestions.length} Questions)</option>
+                                        {Object.entries(categoryCounts).map(([category, count]) => (
+                                            <option key={category} value={category}>
+                                                {category} ({count} Questions)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-lg font-medium text-gray-700 mb-2">Phone Number *</label>
-                                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="+91 9876543210" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <IconShield />
+                                        <h3 className="font-semibold text-amber-800">Security Measures</h3>
+                                    </div>
+                                    <ul className="space-y-2 text-sm text-amber-700">
+                                        <li className="flex items-center gap-2">• Fullscreen mode enforced</li>
+                                        <li className="flex items-center gap-2">• Tab switching prohibited</li>
+                                        <li className="flex items-center gap-2">• Developer tools disabled</li>
+                                        <li className="flex items-center gap-2">• 3 violations will auto-submit</li>
+                                    </ul>
+                                </div>
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <IconClock />
+                                        <h3 className="font-semibold text-blue-800">Test Information</h3>
+                                    </div>
+                                    <ul className="space-y-2 text-sm text-blue-700">
+                                        <li className="flex items-center gap-2">• Total Questions: {filteredQuestions.length} MCQs</li>
+                                        <li className="flex items-center gap-2">• Time Limit: 30 minutes</li>
+                                        <li className="flex items-center gap-2">• No negative marking</li>
+                                        <li className="flex items-center gap-2">• Results saved automatically</li>
+                                    </ul>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-lg font-medium text-gray-700 mb-2">Test Category</label>
-                                <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                    <option value="all">All Categories ({dataEngineeringQuestions.length} Questions)</option>
-                                    {Object.entries(categoryCounts).map(([category, count]) => (
-                                        <option key={category} value={category}>
-                                            {category} ({count} Questions)
-                                        </option>
-                                    ))}
-                                </select>
+
+                            {backendStatus === 'disconnected' && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                                    <p className="text-amber-700 text-sm flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                                        Backend offline. Results will be saved locally and synced when connection resumes.
+                                    </p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleStartTest}
+                                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                                disabled={backendStatus === 'checking'}
+                            >
+                                {backendStatus === 'checking' ? 'Checking Connection...' : (
+                                    <>
+                                        Start Assessment
+                                        <IconArrowRight />
+                                    </>
+                                )}
+                            </button>
+
+                            <div className="mt-6 text-center">
+                                <span className={`inline-flex items-center gap-2 text-xs px-2 py-1 rounded ${getBackendStatusColor()}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${backendStatus === 'connected' ? 'bg-emerald-500' : backendStatus === 'disconnected' ? 'bg-amber-500' : 'bg-gray-400'}`}></span>
+                                    {getBackendStatusText()}
+                                </span>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-                            <h3 className="text-lg font-semibold text-red-800 mb-2">Security Measures:</h3>
-                            <ul className="list-disc list-inside text-red-700 space-y-1">
-                                <li>Fullscreen mode enforced</li>
-                                <li>Tab switching prohibited</li>
-                                <li>Developer tools disabled</li>
-                                <li>3 violations will auto-submit test</li>
-                            </ul>
-                        </div>
-
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Test Information:</h3>
-                            <ul className="list-disc list-inside text-yellow-700 space-y-1">
-                                <li>Total Questions: {filteredQuestions.length} MCQs</li>
-                                <li>Time Limit: 30 minutes</li>
-                                <li>No negative marking</li>
-                                <li>Results saved automatically</li>
-                            </ul>
-                        </div>
-
-                        {backendStatus === 'disconnected' && (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-center">
-                                <p className="text-yellow-700">Backend offline. Results will be saved locally.</p>
-                            </div>
-                        )}
-
-                        <button
-                            onClick={handleStartTest}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 text-lg"
-                            disabled={backendStatus === 'checking'}
-                        >
-                            {backendStatus === 'checking' ? 'Checking Connection...' : '🚀 Start Data Engineering Test'}
-                        </button>
+                    <div className="text-center text-gray-400 text-xs mt-8">
+                        <p>© Data Engineering Assessment Platform | Secure Testing Environment</p>
                     </div>
                 </div>
             </div>
@@ -705,67 +870,103 @@ const DataEngineeringTest = () => {
     if (testStarted && !testCompleted) {
         const currentQ = filteredQuestions[currentQuestion];
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
-                <div className="max-w-3xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow-xl p-8">
-                        <div className="flex justify-between items-center mb-8">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-800">💾 Data Engineering Test</h2>
-                                <p className="text-gray-600">Candidate: {userName}</p>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-lg font-semibold">
-                                    Time Left: <span className={timeLeft < 300 ? "text-red-600" : ""}>{formatTime(timeLeft)}</span>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+                <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 z-20">
+                    <div className="max-w-4xl mx-auto px-6 py-3">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                                    <IconDatabase />
                                 </div>
-                                <div>Question {currentQuestion + 1} of {filteredQuestions.length}</div>
-                                <div className="text-red-600">Violations: {violationCount}/3</div>
+                                <span className="font-medium text-gray-900">Data Engineering Test</span>
+                                <span className="text-xs text-gray-400 ml-2">{userName}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <IconClock />
+                                    <span className={timeLeft < 300 ? "text-red-600 font-medium" : "text-gray-600"}>
+                                        {formatTime(timeLeft)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <IconShield />
+                                    <span className="text-sm">
+                                        <span className={violationCount >= 2 ? "text-red-600 font-medium" : "text-gray-600"}>
+                                            {violationCount}
+                                        </span>
+                                        <span className="text-gray-400">/3</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
-                            <div className="bg-indigo-600 h-2 rounded-full transition-all" 
-                                style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }}></div>
-                        </div>
-
-                        <div className="mb-8">
-                            <div className="flex gap-2 flex-wrap mb-4">
-                                <span className={`px-3 py-1 rounded-full text-sm ${getCategoryColor(currentQ.category)}`}>
-                                    {currentQ.category}
-                                </span>
-                                <span className={`px-3 py-1 rounded-full text-sm ${getDifficultyColor(currentQ.difficulty)}`}>
-                                    {currentQ.difficulty.toUpperCase()}
-                                </span>
+                <div className="max-w-3xl mx-auto px-6 py-10">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex gap-2 flex-wrap">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryColor(currentQ.category)}`}>
+                                        {currentQ.category}
+                                    </span>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(currentQ.difficulty)}`}>
+                                        {currentQ.difficulty.toUpperCase()}
+                                    </span>
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                    Question {currentQuestion + 1} of {filteredQuestions.length}
+                                </div>
                             </div>
-                            <h3 className="text-xl font-semibold mb-6">{currentQ.question}</h3>
+
+                            <div className="w-full bg-gray-100 rounded-full h-1 mb-8">
+                                <div 
+                                    className="bg-gradient-to-r from-blue-600 to-purple-600 h-1 rounded-full transition-all duration-300" 
+                                    style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }}
+                                ></div>
+                            </div>
+
+                            <h3 className="text-xl font-semibold text-gray-900 mb-6 leading-relaxed">
+                                {currentQ.question}
+                            </h3>
 
                             <div className="space-y-3">
                                 {currentQ.options.map((option, index) => (
                                     <button
                                         key={index}
                                         onClick={() => handleAnswerSelect(option)}
-                                        className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedAnswer === option
-                                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                            : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                                        className={`w-full text-left p-4 rounded-lg border transition-all duration-150 ${
+                                            selectedAnswer === option
+                                                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                                                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                                         }`}
                                     >
-                                        <span className="font-medium mr-2">{String.fromCharCode(65 + index)}.</span>
-                                        {option}
+                                        <div className="flex items-start gap-3">
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
+                                                selectedAnswer === option
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-gray-100 text-gray-600'
+                                            }`}>
+                                                {String.fromCharCode(65 + index)}
+                                            </div>
+                                            <span className="text-gray-700 flex-1">{option}</span>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
-                        </div>
 
-                        <button
-                            onClick={handleNextQuestion}
-                            disabled={!selectedAnswer}
-                            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50"
-                        >
-                            {currentQuestion === filteredQuestions.length - 1 ? 'Finish Test' : 'Next Question'}
-                        </button>
-
-                        <div className="mt-6 text-center text-sm text-gray-500">
-                            Security Active • Do not switch tabs or exit fullscreen
+                            <button
+                                onClick={handleNextQuestion}
+                                disabled={!selectedAnswer}
+                                className="w-full mt-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:from-blue-700 hover:to-purple-700"
+                            >
+                                {currentQuestion === filteredQuestions.length - 1 ? 'Submit Test' : 'Next Question'}
+                            </button>
                         </div>
+                    </div>
+
+                    <div className="text-center text-xs text-gray-400 mt-6">
+                        <p>Security active • Do not switch tabs or exit fullscreen</p>
                     </div>
                 </div>
             </div>
@@ -777,53 +978,111 @@ const DataEngineeringTest = () => {
         const percentage = ((score / filteredQuestions.length) * 100).toFixed(1);
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
-                <div className="max-w-6xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow-xl p-8">
-                        <div className="text-center mb-8">
-                            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span className="text-4xl">✅</span>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+                <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+                    <div className="max-w-6xl mx-auto px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                <IconDatabase />
                             </div>
-                            <h1 className="text-3xl font-bold text-gray-800">Data Engineering Test Completed!</h1>
-                            <p className="text-gray-600 mt-2">Congratulations {userName}!</p>
+                            <span className="font-semibold text-gray-900">Assessment Results</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="max-w-5xl mx-auto px-6 py-12">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-8 text-center border-b border-gray-100">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <IconCheckCircle />
+                            </div>
+                            <h1 className="text-2xl font-bold text-gray-900">Assessment Completed</h1>
+                            <p className="text-gray-500 mt-1">Congratulations, {userName}!</p>
                         </div>
 
-                        {submissionSuccess && <div className="bg-green-50 p-4 rounded-lg text-green-700 mb-6">{submissionSuccess}</div>}
-                        {submissionError && <div className="bg-yellow-50 p-4 rounded-lg text-yellow-700 mb-6">{submissionError}</div>}
+                        {submissionSuccess && (
+                            <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 m-6 rounded">
+                                <p className="text-emerald-700 text-sm">{submissionSuccess}</p>
+                            </div>
+                        )}
+                        {submissionError && (
+                            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 m-6 rounded">
+                                <p className="text-amber-700 text-sm">{submissionError}</p>
+                            </div>
+                        )}
 
-                        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-10 text-center mb-8">
-                            <h2 className="text-2xl mb-4">Your Score</h2>
-                            <div className="text-7xl font-bold mb-2">{score} / {filteredQuestions.length}</div>
-                            <div className="text-2xl">{percentage}%</div>
-                            <div className="mt-4">Time Taken: {formatTime(1800 - timeLeft)}</div>
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center p-10 m-6 rounded-xl">
+                            <h2 className="text-lg font-medium opacity-90 mb-2">Your Score</h2>
+                            <div className="text-6xl font-bold mb-2">{score} / {filteredQuestions.length}</div>
+                            <div className="text-2xl opacity-90">{percentage}%</div>
+                            <div className="mt-4 text-sm opacity-75 flex items-center justify-center gap-2">
+                                <IconClock />
+                                Time taken: {formatTime(1800 - timeLeft)}
+                            </div>
                         </div>
 
-                        <div className="mb-8">
-                            <h3 className="text-xl font-bold mb-4">Detailed Results</h3>
+                        <div className="p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Question Review</h3>
                             <div className="space-y-4">
                                 {userAnswers.map((answer, index) => (
-                                    <div key={index} className={`border rounded-lg p-5 ${answer.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                                        <div className="flex justify-between">
-                                            <strong>Q{index + 1}: {answer.question}</strong>
-                                            <span className={`px-3 py-1 rounded text-xs font-medium ${answer.isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
-                                                {answer.isCorrect ? 'CORRECT' : 'INCORRECT'}
-                                            </span>
-                                        </div>
-                                        <div className="mt-3 text-sm">
-                                            <p><strong>Your Answer:</strong> {answer.selectedAnswer || 'Not answered'}</p>
-                                            <p><strong>Correct Answer:</strong> {answer.correctAnswer}</p>
-                                            {answer.explanation && <p className="mt-2 text-gray-600"><strong>Explanation:</strong> {answer.explanation}</p>}
+                                    <div 
+                                        key={index} 
+                                        className={`border rounded-lg p-5 ${
+                                            answer.isCorrect 
+                                                ? 'bg-emerald-50 border-emerald-200' 
+                                                : 'bg-red-50 border-red-200'
+                                        }`}
+                                    >
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                                        answer.isCorrect ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'
+                                                    }`}>
+                                                        {index + 1}
+                                                    </span>
+                                                    <span className="font-medium text-gray-900">{answer.question}</span>
+                                                </div>
+                                                <div className="mt-2 text-sm space-y-1">
+                                                    <p><span className="text-gray-500">Your answer:</span> {answer.selectedAnswer || 'Not answered'}</p>
+                                                    <p><span className="text-gray-500">Correct answer:</span> <span className="font-medium text-gray-900">{answer.correctAnswer}</span></p>
+                                                    {answer.explanation && (
+                                                        <p className="mt-2 text-gray-600 text-sm bg-white/50 p-2 rounded">
+                                                            {answer.explanation}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                {answer.isCorrect ? (
+                                                    <IconCheckCircle />
+                                                ) : (
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    </svg>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button onClick={resetTest} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-lg">
-                                Take Test Again
+                        <div className="p-6 border-t border-gray-100 flex flex-col sm:flex-row gap-4 justify-center">
+                            <button 
+                                onClick={resetTest} 
+                                className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-8 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                                <IconRepeat />
+                                Take Again
                             </button>
-                            <button onClick={() => window.print()} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-10 rounded-lg">
+                            <button 
+                                onClick={() => window.print()} 
+                                className="border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-2.5 px-8 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                                <IconPrinter />
                                 Print Results
                             </button>
                         </div>

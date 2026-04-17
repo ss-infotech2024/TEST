@@ -326,10 +326,10 @@ const GermanTest = () => {
         return 'german-sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     };
 
-    const SUBMIT_ENDPOINT = 'https://ssinfotech-backend-k03q.onrender.com/api/submissions/submit';
+    const SUBMIT_ENDPOINT = 'https://ssinfotech-0x5s.onrender.com/api/submissions/submit';
     const HEALTH_ENDPOINTS = [
-        'https://ssinfotech-backend-k03q.onrender.com/health',
-        'https://ssinfotech-backend-k03q.onrender.com/api/health'
+        'https://ssinfotech-0x5s.onrender.com/health',
+        'https://ssinfotech-0x5s.onrender.com/api/health'
     ];
 
     const submitTestToBackend = async (submissionData) => {

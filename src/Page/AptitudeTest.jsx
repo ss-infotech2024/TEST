@@ -54,10 +54,10 @@ const AptitudeTest = () => {
     : aptitudeQuestions.filter(q => q.category === categoryFilter);
 
   // Constants
-  const SUBMIT_ENDPOINT = 'https://ssinfotech-backend-k03q.onrender.com/api/submissions/submit';
+  const SUBMIT_ENDPOINT = 'https://ssinfotech-0x5s.onrender.com/api/submissions/submit';
   const HEALTH_ENDPOINTS = [
-    'https://ssinfotech-backend-k03q.onrender.com/health',
-    'https://ssinfotech-backend-k03q.onrender.com/api/health',
+    'https://ssinfotech-0x5s.onrender.com/health',
+    'https://ssinfotech-0x5s.onrender.com/api/health',
   ];
   const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfYourFormID/viewform';
   const VIOLATION_COOLDOWN_MS = 2000;
