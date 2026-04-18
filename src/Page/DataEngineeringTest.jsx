@@ -289,7 +289,7 @@ const DataEngineeringTest = () => {
     const [testStarted, setTestStarted] = useState(false);
     const [testCompleted, setTestCompleted] = useState(false);
     const [userAnswers, setUserAnswers] = useState([]);
-    const [timeLeft, setTimeLeft] = useState(1800);
+    const [timeLeft, setTimeLeft] = useState(3600); // 60 minutes = 3600 seconds
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [violationCount, setViolationCount] = useState(0);
     const [startTime, setStartTime] = useState(null);
@@ -342,14 +342,19 @@ const DataEngineeringTest = () => {
 
     const enterFullscreen = () => {
         const elem = document.documentElement;
-        elem.requestFullscreen?.();
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        }
     };
 
     const exitFullscreen = () => {
-        document.exitFullscreen?.();
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
     };
 
     const handleViolation = () => {
+        if (!testStarted || testCompleted) return;
         const newCount = violationCount + 1;
         setViolationCount(newCount);
         if (newCount >= 3) {
@@ -360,9 +365,15 @@ const DataEngineeringTest = () => {
     useEffect(() => {
         if (!testStarted || testCompleted) return;
 
-        const visibilityHandler = () => document.hidden && handleViolation();
+        const visibilityHandler = () => {
+            if (document.hidden) handleViolation();
+        };
         const blurHandler = () => handleViolation();
-        const fullscreenHandler = () => !document.fullscreenElement && handleViolation();
+        const fullscreenHandler = () => {
+            if (!document.fullscreenElement && testStarted && !testCompleted) {
+                handleViolation();
+            }
+        };
         const keydownHandler = (e) => {
             if (e.key === 'Escape' || e.key === 'F12' ||
                 (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) ||
@@ -399,23 +410,45 @@ const DataEngineeringTest = () => {
 
     useEffect(() => {
         if (!testStarted || testCompleted || timeLeft <= 0) return;
-        const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-        if (timeLeft === 0) handleTestCompletion();
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    handleTestCompletion();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
         return () => clearInterval(timer);
-    }, [testStarted, testCompleted, timeLeft]);
+    }, [testStarted, testCompleted]);
 
     const validateUserInfo = () => {
-        if (!userName.trim()) return false;
-        if (!email.trim()) return false;
-        if (!phone.trim()) return false;
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
-        if (!/^[0-9+\-\s()]{10,}$/.test(phone)) return false;
+        if (!userName.trim()) {
+            alert('Please enter your full name');
+            return false;
+        }
+        if (!email.trim()) {
+            alert('Please enter your email address');
+            return false;
+        }
+        if (!phone.trim()) {
+            alert('Please enter your phone number');
+            return false;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert('Please enter a valid email address');
+            return false;
+        }
+        if (!/^[0-9+\-\s()]{10,}$/.test(phone)) {
+            alert('Please enter a valid phone number (minimum 10 digits)');
+            return false;
+        }
         return true;
     };
 
     const handleStartTest = () => {
         if (!validateUserInfo()) {
-            alert('Please fill all fields correctly');
             return;
         }
         setTestStarted(true);
@@ -426,15 +459,32 @@ const DataEngineeringTest = () => {
         setSelectedAnswer('');
         setViolationCount(0);
         setHasSubmitted(false);
+        setTimeLeft(3600); // Reset to 60 minutes
     };
 
     const handleAnswerSelect = (answer) => setSelectedAnswer(answer);
 
+    const handlePreviousQuestion = () => {
+        if (currentQuestion > 0) {
+            setCurrentQuestion(currentQuestion - 1);
+            // Load previously selected answer for the question
+            const previousAnswer = userAnswers[currentQuestion - 1];
+            setSelectedAnswer(previousAnswer ? previousAnswer.selectedAnswer : '');
+        }
+    };
+
     const handleNextQuestion = () => {
+        if (!selectedAnswer) {
+            alert('Please select an answer before proceeding');
+            return;
+        }
+
         const currentQ = filteredQuestions[currentQuestion];
         const isCorrect = selectedAnswer === currentQ.correctAnswer;
 
-        setUserAnswers(prev => [...prev, {
+        // Update userAnswers
+        const updatedAnswers = [...userAnswers];
+        updatedAnswers[currentQuestion] = {
             questionId: currentQ.id,
             question: currentQ.question,
             selectedAnswer,
@@ -442,13 +492,22 @@ const DataEngineeringTest = () => {
             isCorrect,
             category: currentQ.category,
             explanation: currentQ.explanation
-        }]);
+        };
+        
+        setUserAnswers(updatedAnswers);
 
-        if (isCorrect) setScore(s => s + 1);
+        // Update score
+        let newScore = 0;
+        updatedAnswers.forEach(answer => {
+            if (answer && answer.isCorrect) newScore++;
+        });
+        setScore(newScore);
 
         if (currentQuestion < filteredQuestions.length - 1) {
-            setCurrentQuestion(c => c + 1);
-            setSelectedAnswer('');
+            setCurrentQuestion(currentQuestion + 1);
+            // Load previously selected answer for the next question if exists
+            const nextAnswer = updatedAnswers[currentQuestion + 1];
+            setSelectedAnswer(nextAnswer ? nextAnswer.selectedAnswer : '');
         } else {
             handleTestCompletion();
         }
@@ -458,7 +517,7 @@ const DataEngineeringTest = () => {
         if (hasSubmitted) return;
         setHasSubmitted(true);
 
-        const timeTaken = startTime ? Math.floor((Date.now() - startTime) / 1000) : 1800 - timeLeft;
+        const timeTaken = startTime ? Math.floor((Date.now() - startTime) / 1000) : 3600 - timeLeft;
 
         const submissionData = {
             testType: 'data-engineering',
@@ -467,7 +526,7 @@ const DataEngineeringTest = () => {
             phone: phone.trim(),
             score,
             totalQuestions: filteredQuestions.length,
-            userAnswers,
+            userAnswers: userAnswers.filter(a => a !== undefined),
             violationCount,
             timeTaken,
             submittedAt: new Date().toISOString(),
@@ -484,9 +543,14 @@ const DataEngineeringTest = () => {
     };
 
     const formatTime = (seconds) => {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return `${m}:${s < 10 ? '0' : ''}${s}`;
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        
+        if (hours > 0) {
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     const resetTest = () => {
@@ -499,10 +563,11 @@ const DataEngineeringTest = () => {
         setSelectedAnswer('');
         setScore(0);
         setUserAnswers([]);
-        setTimeLeft(1800);
+        setTimeLeft(3600);
         setCategoryFilter('all');
         setViolationCount(0);
         setHasSubmitted(false);
+        setStartTime(null);
     };
 
     const getCategoryCounts = () => {
@@ -522,18 +587,19 @@ const DataEngineeringTest = () => {
         { name: 'SQL Analytics', icon: '📈', description: 'Advanced query optimization' }
     ];
 
+    // Progress percentage
+    const answeredCount = userAnswers.filter(a => a !== undefined).length;
+    const progressPercentage = (answeredCount / filteredQuestions.length) * 100;
+
     if (!testStarted && !testCompleted) {
         return (
             <div className="min-h-screen bg-gray-50">
-    
-
                 <div className="max-w-6xl mx-auto px-6 py-12">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="p-8">
                             <div className="text-center mb-8">
-                               
                                 <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                                    Data Engineering 
+                                    Data Engineering Test
                                 </h1>
                                 <p className="text-gray-500 text-lg">
                                     Master SQL, PySpark, Python & Big Data Architecture
@@ -617,8 +683,7 @@ const DataEngineeringTest = () => {
                                     </div>
                                     <ul className="space-y-2 text-sm text-blue-700">
                                         <li>• {filteredQuestions.length} MCQs</li>
-                                        <li>• 30 minutes time limit</li>
-
+                                        <li>• 60 minutes time limit</li>
                                     </ul>
                                 </div>
                             </div>
@@ -627,7 +692,7 @@ const DataEngineeringTest = () => {
                                 onClick={handleStartTest}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
                             >
-                                Start Assessment →
+                                Start Test →
                             </button>
 
                             <div className="mt-6 text-center text-xs text-gray-400">
@@ -645,6 +710,9 @@ const DataEngineeringTest = () => {
 
     if (testStarted && !testCompleted) {
         const currentQ = filteredQuestions[currentQuestion];
+        const isLastQuestion = currentQuestion === filteredQuestions.length - 1;
+        const isFirstQuestion = currentQuestion === 0;
+        
         return (
             <div className="min-h-screen bg-gray-50">
                 <div className="sticky top-0 bg-white border-b border-gray-200 z-20">
@@ -652,13 +720,13 @@ const DataEngineeringTest = () => {
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">DB</div>
-                                <span className="font-medium text-gray-900">Assessment</span>
+                                <span className="font-medium text-gray-900">Data Engineering Test</span>
                                 <span className="text-xs text-gray-400 ml-2">{userName}</span>
                             </div>
                             <div className="flex items-center gap-6">
                                 <div className="flex items-center gap-2">
                                     <span>⏱️</span>
-                                    <span className={timeLeft < 300 ? "text-red-600 font-medium" : "text-gray-600"}>
+                                    <span className={timeLeft < 600 ? "text-red-600 font-medium" : "text-gray-600"}>
                                         {formatTime(timeLeft)}
                                     </span>
                                 </div>
@@ -696,7 +764,7 @@ const DataEngineeringTest = () => {
                             <div className="w-full bg-gray-100 rounded-full h-1 mb-8">
                                 <div 
                                     className="bg-blue-600 h-1 rounded-full transition-all" 
-                                    style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }}
+                                    style={{ width: `${progressPercentage}%` }}
                                 ></div>
                             </div>
 
@@ -729,18 +797,30 @@ const DataEngineeringTest = () => {
                                 ))}
                             </div>
 
-                            <button
-                                onClick={handleNextQuestion}
-                                disabled={!selectedAnswer}
-                                className="w-full mt-8 bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
-                            >
-                                {currentQuestion === filteredQuestions.length - 1 ? 'Submit Test' : 'Next Question'}
-                            </button>
+                            <div className="flex gap-3 mt-8">
+                                {!isFirstQuestion && (
+                                    <button
+                                        onClick={handlePreviousQuestion}
+                                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-lg transition-colors"
+                                    >
+                                        ← Previous
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleNextQuestion}
+                                    disabled={!selectedAnswer}
+                                    className={`flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors ${
+                                        isFirstQuestion ? 'w-full' : ''
+                                    }`}
+                                >
+                                    {isLastQuestion ? 'Submit Test' : 'Next Question →'}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div className="text-center text-xs text-gray-400 mt-6">
-                        Security active • Do not switch tabs or exit fullscreen
+                        🔒 Security active • Do not switch tabs or exit fullscreen • {3 - violationCount} violations remaining
                     </div>
                 </div>
             </div>
@@ -749,15 +829,14 @@ const DataEngineeringTest = () => {
 
     if (testCompleted) {
         const percentage = ((score / filteredQuestions.length) * 100).toFixed(1);
-        const passed = score >= filteredQuestions.length * 0.7;
-
+        
         return (
             <div className="min-h-screen bg-gray-50">
                 <div className="border-b border-gray-200 bg-white">
                     <div className="max-w-5xl mx-auto px-6 py-4">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">DB</div>
-                            <span className="font-semibold text-gray-900">Assessment Results</span>
+                            <span className="font-semibold text-gray-900">Test Results</span>
                         </div>
                     </div>
                 </div>
@@ -766,12 +845,12 @@ const DataEngineeringTest = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div className="p-8 text-center border-b border-gray-100">
                             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                                {passed ? '✓' : '📋'}
+                                📋
                             </div>
                             <h1 className="text-2xl font-bold text-gray-900">
-                                {passed ? 'Certification Achieved' : 'Assessment Completed'}
+                                Test Completed
                             </h1>
-                            <p className="text-gray-500 mt-1">Congratulations, {userName}!</p>
+                            <p className="text-gray-500 mt-1">Thank you, {userName}!</p>
                         </div>
 
                         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center p-10 m-6 rounded-xl">
@@ -779,19 +858,14 @@ const DataEngineeringTest = () => {
                             <div className="text-6xl font-bold mb-2">{score} / {filteredQuestions.length}</div>
                             <div className="text-2xl opacity-90">{percentage}%</div>
                             <div className="mt-4 text-sm opacity-75">
-                                ⏱️ Time: {formatTime(1800 - timeLeft)}
+                                ⏱️ Time taken: {formatTime(3600 - timeLeft)}
                             </div>
-                            {passed && (
-                                <div className="mt-4 inline-block bg-white/20 rounded-full px-4 py-1 text-sm">
-                                    🎓 Data Engineering Certified
-                                </div>
-                            )}
                         </div>
 
                         <div className="p-6">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Answer Review</h3>
-                            <div className="space-y-3">
-                                {userAnswers.map((answer, index) => (
+                            <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                                {userAnswers.filter(a => a !== undefined).map((answer, index) => (
                                     <div 
                                         key={index} 
                                         className={`border rounded-lg p-4 ${
