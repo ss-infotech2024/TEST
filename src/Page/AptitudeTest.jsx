@@ -3,18 +3,18 @@ import {
   ClipboardList, User, Mail, Phone, Filter, Clock, AlertTriangle,
   CheckCircle, Shield, Award, BookOpen, Brain,
   Lightbulb, Users, ChevronLeft, ChevronRight, Printer, ExternalLink,
-  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code 
+  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code
 } from 'lucide-react';
 import { aptitudeQuestions } from '../aptitudeq';
-import image1 from "../assets/crt.png";
-import image2 from "../assets/databricks.png";
-import image3 from "../assets/germany.png";
+import image1 from "../assets/newcrt.jpeg";
+import image2 from "../assets/corehiring.png";
+import image3 from "../assets/internship.jpeg";
 import image4 from "../assets/servicecourse.png";
-import popimg from "../assets/corehiring.png"
+import popimg from "../assets/corehiring.png";
 
 const DEFAULT_LEFT_IMAGES = [image1, image2];
 const DEFAULT_RIGHT_IMAGES = [image3, image4];
-const POPUP_IMAGES = [ popimg, image4];
+const POPUP_IMAGES = [popimg, image4];
 
 const AptitudeTest = () => {
   const [userName, setUserName] = useState('');
@@ -57,7 +57,8 @@ const AptitudeTest = () => {
   const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfYourFormID/viewform';
   const VIOLATION_COOLDOWN_MS = 2000;
 
-  const generateSubmissionId = () => 'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  const generateSubmissionId = () =>
+    'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
   const formatTime = seconds => {
     const hrs = Math.floor(seconds / 3600);
@@ -155,7 +156,9 @@ const AptitudeTest = () => {
 
     const accurateScore = finalScore !== undefined ? finalScore : scoreRef.current;
     const accurateAnswers = finalAnswers !== undefined ? finalAnswers : userAnswersRef.current;
-    const timeTaken = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 3600 - timeLeft;
+    const timeTaken = startTimeRef.current
+      ? Math.floor((Date.now() - startTimeRef.current) / 1000)
+      : 3600 - timeLeft;
 
     const submissionData = {
       userName: userName.trim(),
@@ -184,17 +187,13 @@ const AptitudeTest = () => {
 
   const handleViolation = useCallback(() => {
     if (testCompletedRef.current) return;
-
     const now = Date.now();
     if (violationCooldownRef.current) return;
     if (now - lastViolationTimeRef.current < VIOLATION_COOLDOWN_MS) return;
 
     violationCooldownRef.current = true;
     lastViolationTimeRef.current = now;
-
-    setTimeout(() => {
-      violationCooldownRef.current = false;
-    }, VIOLATION_COOLDOWN_MS);
+    setTimeout(() => { violationCooldownRef.current = false; }, VIOLATION_COOLDOWN_MS);
 
     const newCount = violationCountRef.current + 1;
     violationCountRef.current = newCount;
@@ -214,18 +213,14 @@ const AptitudeTest = () => {
 
   const blurHandler = useCallback(() => {
     if (!testCompletedRef.current) {
-      setTimeout(() => {
-        if (!testCompletedRef.current) handleViolation();
-      }, 100);
+      setTimeout(() => { if (!testCompletedRef.current) handleViolation(); }, 100);
     }
   }, [handleViolation]);
 
   const fullscreenChangeHandler = useCallback(() => {
     if (!testCompletedRef.current && !document.fullscreenElement && !document.webkitFullscreenElement) {
       handleViolation();
-      setTimeout(() => {
-        if (!testCompletedRef.current) enterFullscreen();
-      }, 500);
+      setTimeout(() => { if (!testCompletedRef.current) enterFullscreen(); }, 500);
     }
   }, [handleViolation, enterFullscreen]);
 
@@ -322,12 +317,10 @@ const AptitudeTest = () => {
     if (!email.trim()) { alert('Please enter your email address'); return false; }
     if (!phone.trim()) { alert('Please enter your phone number'); return false; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert('Please enter a valid email address');
-      return false;
+      alert('Please enter a valid email address'); return false;
     }
     if (!/^[0-9+\-\s()]{10,15}$/.test(phone.trim())) {
-      alert('Please enter a valid phone number');
-      return false;
+      alert('Please enter a valid phone number'); return false;
     }
     return true;
   };
@@ -438,36 +431,38 @@ const AptitudeTest = () => {
 
   const getDifficultyColor = d =>
     d === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-    d === 'hard' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+    d === 'hard'   ? 'bg-red-100 text-red-800'    : 'bg-green-100 text-green-800';
 
   const getCategoryColor = c =>
-    c === 'Logical' ? 'bg-blue-100 text-blue-800' :
+    c === 'Logical'   ? 'bg-blue-100 text-blue-800'   :
     c === 'Reasoning' ? 'bg-indigo-100 text-indigo-800' :
     c === 'Technical' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
 
   const getCategoryIcon = c => {
     switch (c) {
-      case 'Logical': return <Brain size={16} className="mr-1" />;
+      case 'Logical':   return <Brain    size={16} className="mr-1" />;
       case 'Reasoning': return <Lightbulb size={16} className="mr-1" />;
-      case 'Technical': return <Code size={16} className="mr-1" />;
-      default: return <BookOpen size={16} className="mr-1" />;
+      case 'Technical': return <Code     size={16} className="mr-1" />;
+      default:          return <BookOpen  size={16} className="mr-1" />;
     }
   };
 
   const getBackendStatusColor = () =>
-    backendStatus === 'connected' ? 'bg-green-100 text-green-800' :
+    backendStatus === 'connected'    ? 'bg-green-100 text-green-800'  :
     backendStatus === 'disconnected' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800';
 
   const getBackendStatusIcon = () =>
-    backendStatus === 'connected' ? <CheckCircle size={14} className="mr-1" /> :
-    backendStatus === 'disconnected' ? <WifiOff size={14} className="mr-1" /> : <Activity size={14} className="mr-1" />;
+    backendStatus === 'connected'    ? <CheckCircle size={14} className="mr-1" /> :
+    backendStatus === 'disconnected' ? <WifiOff     size={14} className="mr-1" /> :
+                                      <Activity    size={14} className="mr-1" />;
 
   const getBackendStatusText = () =>
-    backendStatus === 'connected' ? 'Connected' : backendStatus === 'disconnected' ? 'Offline Mode' : 'Checking...';
+    backendStatus === 'connected'    ? 'Connected'   :
+    backendStatus === 'disconnected' ? 'Offline Mode' : 'Checking...';
 
   const getCategoryStats = () => {
     const stats = {
-      Logical: { total: 0, correct: 0 },
+      Logical:   { total: 0, correct: 0 },
       Reasoning: { total: 0, correct: 0 },
       Technical: { total: 0, correct: 0 },
     };
@@ -480,50 +475,38 @@ const AptitudeTest = () => {
     return stats;
   };
 
-  // Popup Component - Side by side images, wider popup
+  // ─── Popup ──────────────────────────────────────────────────────────────────
   const PopupModal = () => {
     if (!showPopup) return null;
-
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg shadow-xl w-[800px] max-w-[90vw]">
-          {/* Header */}
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
               <Shield size={20} className="text-blue-600" />
               Important Notice
             </h2>
-            <button
-              onClick={() => setShowPopup(false)}
-              className="text-gray-400 hover:text-gray-600 transition"
-            >
+            <button onClick={() => setShowPopup(false)} className="text-gray-400 hover:text-gray-600 transition">
               <X size={20} />
             </button>
           </div>
 
-          {/* Images - Side by Side (Left-Right) */}
           <div className="p-6">
             <div className="flex gap-6 justify-center items-center">
               {POPUP_IMAGES.map((img, idx) => (
                 <div key={idx} className="flex-1">
-                  <img 
-                    src={img} 
-                    alt={`Notice ${idx + 1}`} 
-                    className="w-full h-auto rounded border border-gray-200"
-                  />
+                  <img src={img} alt={`Notice ${idx + 1}`} className="w-full h-auto rounded border border-gray-200" />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Footer */}
           <div className="px-6 py-4 border-t border-gray-200 flex justify-center">
             <button
               onClick={() => setShowPopup(false)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition flex items-center gap-2"
             >
-              <CheckCircle size={16} />
-              Continue
+              <CheckCircle size={16} /> Continue
             </button>
           </div>
         </div>
@@ -531,6 +514,7 @@ const AptitudeTest = () => {
     );
   };
 
+  // ─── Registration / Landing ──────────────────────────────────────────────────
   if (!testStarted && !testCompleted) {
     return (
       <>
@@ -538,6 +522,8 @@ const AptitudeTest = () => {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8">
+
+              {/* Header */}
               <div className="text-center mb-6">
                 <div className="flex justify-center mb-4">
                   <div className="bg-blue-100 p-4 rounded-full">
@@ -548,11 +534,12 @@ const AptitudeTest = () => {
                 <p className="text-gray-600">Comprehensive evaluation of your skills</p>
               </div>
 
+              {/* User Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {[
-                  { label: 'Full Name', icon: <User size={18} className="inline mr-2" />, value: userName, set: setUserName, type: 'text', placeholder: 'John Doe' },
-                  { label: 'Email', icon: <Mail size={18} className="inline mr-2" />, value: email, set: setEmail, type: 'email', placeholder: 'john@example.com' },
-                  { label: 'Phone Number', icon: <Phone size={18} className="inline mr-2" />, value: phone, set: setPhone, type: 'tel', placeholder: '+1234567890' },
+                  { label: 'Full Name',     icon: <User  size={18} className="inline mr-2" />, value: userName, set: setUserName, type: 'text',  placeholder: 'John Doe' },
+                  { label: 'Email',         icon: <Mail  size={18} className="inline mr-2" />, value: email,    set: setEmail,    type: 'email', placeholder: 'john@example.com' },
+                  { label: 'Phone Number',  icon: <Phone size={18} className="inline mr-2" />, value: phone,    set: setPhone,    type: 'tel',   placeholder: '+1234567890' },
                 ].map(({ label, icon, value, set, type, placeholder }) => (
                   <div key={label}>
                     <label className="block text-lg font-medium text-gray-700 mb-2">{icon}{label} *</label>
@@ -573,18 +560,19 @@ const AptitudeTest = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Categories ({aptitudeQuestions.length} Questions)</option>
-                    <option value="Logical">Logical Reasoning Only</option>
-                    <option value="Reasoning">Pure Reasoning Only</option>
-                    <option value="Technical">Technical Only</option>
+                    <option value="Logical">Logical Reasoning Only ({aptitudeQuestions.filter(q => q.category === 'Logical').length} Questions)</option>
+                    <option value="Reasoning">Pure Reasoning Only ({aptitudeQuestions.filter(q => q.category === 'Reasoning').length} Questions)</option>
+                    <option value="Technical">Technical Only ({aptitudeQuestions.filter(q => q.category === 'Technical').length} Questions)</option>
                   </select>
                 </div>
               </div>
 
+              {/* Category Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {[
-                  { cat: 'Logical', icon: <Brain size={32} className="text-blue-600 mx-auto mb-2" />, bg: 'bg-blue-50', text: 'text-blue-600', label: 'text-blue-700' },
+                  { cat: 'Logical',   icon: <Brain     size={32} className="text-blue-600 mx-auto mb-2" />,   bg: 'bg-blue-50',   text: 'text-blue-600',   label: 'text-blue-700'   },
                   { cat: 'Reasoning', icon: <Lightbulb size={32} className="text-indigo-600 mx-auto mb-2" />, bg: 'bg-indigo-50', text: 'text-indigo-600', label: 'text-indigo-700' },
-                  { cat: 'Technical', icon: <Code size={32} className="text-purple-600 mx-auto mb-2" />, bg: 'bg-purple-50', text: 'text-purple-600', label: 'text-purple-700' },
+                  { cat: 'Technical', icon: <Code      size={32} className="text-purple-600 mx-auto mb-2" />, bg: 'bg-purple-50', text: 'text-purple-600', label: 'text-purple-700' },
                 ].map(({ cat, icon, bg, text, label }) => (
                   <div key={cat} className={`${bg} p-4 rounded-lg text-center`}>
                     {icon}
@@ -592,10 +580,12 @@ const AptitudeTest = () => {
                       {aptitudeQuestions.filter(q => q.category === cat).length}
                     </div>
                     <div className={`${label} font-medium`}>{cat}</div>
+                    <div className="text-xs text-gray-500 mt-1">Questions</div>
                   </div>
                 ))}
               </div>
 
+              {/* Security Notice */}
               <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
                 <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center">
                   <Shield size={20} className="mr-2" /> Security Measures
@@ -608,6 +598,7 @@ const AptitudeTest = () => {
                 </ul>
               </div>
 
+              {/* Test Info */}
               <div className="bg-blue-50 rounded-lg p-6 mb-8">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
                   <FileText size={20} className="mr-2" /> Test Information
@@ -645,11 +636,14 @@ const AptitudeTest = () => {
     );
   }
 
+  // ─── Active Test ─────────────────────────────────────────────────────────────
   if (testStarted && !testCompleted) {
     const currentQ = filteredQuestions[currentQuestion];
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+
+        {/* Security Banner */}
         <div className="max-w-7xl mx-auto mb-4">
           <div className="bg-red-600 text-white px-4 py-2 rounded-lg text-center font-bold flex items-center justify-between">
             <div className="flex items-center">
@@ -670,6 +664,8 @@ const AptitudeTest = () => {
 
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-6">
+
+            {/* Left Ad Column */}
             <div className="lg:w-1/5 space-y-6">
               {DEFAULT_LEFT_IMAGES.map((img, idx) => (
                 <div key={`left-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -678,8 +674,11 @@ const AptitudeTest = () => {
               ))}
             </div>
 
+            {/* Main Question Panel */}
             <div className="lg:w-3/5">
               <div className="bg-white rounded-2xl shadow-xl p-8">
+
+                {/* Top Bar */}
                 <div className="flex justify-between items-center mb-8">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -700,10 +699,15 @@ const AptitudeTest = () => {
                   </div>
                 </div>
 
+                {/* Progress Bar */}
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
-                  <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }} />
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }}
+                  />
                 </div>
 
+                {/* Question */}
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex gap-2">
@@ -739,6 +743,7 @@ const AptitudeTest = () => {
                   </div>
                 </div>
 
+                {/* Navigation */}
                 <div className="flex justify-between">
                   <button
                     onClick={() => {
@@ -769,14 +774,15 @@ const AptitudeTest = () => {
                   <Shield size={18} className="text-red-600 inline mr-2" />
                   <span className="text-red-700 font-medium">
                     Do not leave fullscreen or switch tabs!{' '}
-                    {violationCount === 0 && "Stay focused!"}
-                    {violationCount === 1 && "Be careful!"}
-                    {violationCount === 2 && "Last warning!"}
+                    {violationCount === 0 && 'Stay focused!'}
+                    {violationCount === 1 && 'Be careful!'}
+                    {violationCount === 2 && 'Last warning!'}
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Right Ad Column */}
             <div className="lg:w-1/5 space-y-6">
               {DEFAULT_RIGHT_IMAGES.map((img, idx) => (
                 <div key={`right-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -790,6 +796,7 @@ const AptitudeTest = () => {
     );
   }
 
+  // ─── Results Screen ───────────────────────────────────────────────────────────
   if (testCompleted) {
     const categoryStats = getCategoryStats();
     const finalScore = scoreRef.current;
@@ -800,6 +807,8 @@ const AptitudeTest = () => {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 py-8 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-8">
+
+            {/* Completion Header */}
             <div className="text-center mb-8">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Award size={40} className="text-green-600" />
@@ -828,53 +837,74 @@ const AptitudeTest = () => {
               </div>
             </div>
 
+            {/* Score Banner */}
             <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-white text-center mb-8">
               <h2 className="text-2xl font-bold mb-4">Your Overall Score</h2>
               <div className="text-6xl font-bold mb-2">{finalScore}/{totalQ}</div>
               <div className="text-2xl">{percentage}%</div>
               <div className="text-sm mt-2 flex items-center justify-center">
                 <Clock size={14} className="mr-1" />
-                Time Taken: {startTimeRef.current ? formatTime(Math.floor((Date.now() - startTimeRef.current) / 1000)) : '—'}
+                Time Taken: {startTimeRef.current
+                  ? formatTime(Math.floor((Date.now() - startTimeRef.current) / 1000))
+                  : '—'}
               </div>
             </div>
 
+            {/* Per-Category Breakdown */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {Object.entries(categoryStats).map(([category, stats]) => stats.total > 0 && (
-                <div key={category} className={`p-6 rounded-lg text-center ${
-                  category === 'Logical' ? 'bg-blue-50' : category === 'Reasoning' ? 'bg-indigo-50' : 'bg-purple-50'
-                }`}>
-                  <div className="flex justify-center mb-2">
-                    {category === 'Logical' && <Brain size={32} className="text-blue-600" />}
-                    {category === 'Reasoning' && <Lightbulb size={32} className="text-indigo-600" />}
-                    {category === 'Technical' && <Code size={32} className="text-purple-600" />}
+              {Object.entries(categoryStats).map(([category, stats]) =>
+                stats.total > 0 && (
+                  <div key={category} className={`p-6 rounded-lg text-center ${
+                    category === 'Logical'   ? 'bg-blue-50'   :
+                    category === 'Reasoning' ? 'bg-indigo-50' : 'bg-purple-50'
+                  }`}>
+                    <div className="flex justify-center mb-2">
+                      {category === 'Logical'   && <Brain     size={32} className="text-blue-600"   />}
+                      {category === 'Reasoning' && <Lightbulb size={32} className="text-indigo-600" />}
+                      {category === 'Technical' && <Code      size={32} className="text-purple-600" />}
+                    </div>
+                    <div className={`text-3xl font-bold ${
+                      category === 'Logical'   ? 'text-blue-600'   :
+                      category === 'Reasoning' ? 'text-indigo-600' : 'text-purple-600'
+                    }`}>{stats.correct}/{stats.total}</div>
+                    <div className="font-medium text-gray-700">{category}</div>
+                    <div className="text-sm text-gray-500">
+                      {((stats.correct / stats.total) * 100).toFixed(1)}%
+                    </div>
                   </div>
-                  <div className={`text-3xl font-bold ${
-                    category === 'Logical' ? 'text-blue-600' : category === 'Reasoning' ? 'text-indigo-600' : 'text-purple-600'
-                  }`}>{stats.correct}/{stats.total}</div>
-                  <div className="font-medium text-gray-700">{category}</div>
-                  <div className="text-sm text-gray-500">{((stats.correct / stats.total) * 100).toFixed(1)}%</div>
-                </div>
-              ))}
+                )
+              )}
             </div>
 
+            {/* Google Form CTA */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 text-center">
               <h3 className="text-xl font-bold text-yellow-800 mb-3 flex items-center justify-center">
                 <FileText size={20} className="mr-2" /> Next Step: Complete Online Test Form
               </h3>
-              <p className="text-yellow-700 mb-4">Click below to complete the official Google Form for your submission.</p>
+              <p className="text-yellow-700 mb-4">
+                Click below to complete the official Google Form for your submission.
+              </p>
               <button
                 onClick={() => window.open(GOOGLE_FORM_URL, '_blank', 'noopener,noreferrer')}
                 className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center mx-auto"
               >
-                <Send size={18} className="mr-2" />Complete Google Form<ExternalLink size={14} className="ml-2" />
+                <Send size={18} className="mr-2" />Complete Google Form
+                <ExternalLink size={14} className="ml-2" />
               </button>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button onClick={resetTest} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center">
+              <button
+                onClick={resetTest}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center"
+              >
                 <ClipboardList size={18} className="mr-2" />Take Test Again
               </button>
-              <button onClick={() => window.print()} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center">
+              <button
+                onClick={() => window.print()}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center"
+              >
                 <Printer size={18} className="mr-2" />Print Results
               </button>
             </div>

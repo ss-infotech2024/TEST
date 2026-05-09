@@ -1,5 +1,6 @@
 export const aptitudeQuestions = [
-  // ==================== 15 LOGICAL REASONING (1-15) ====================
+
+  // ==================== 20 LOGICAL REASONING (1-20) ====================
   {
     id: 1,
     question:
@@ -145,10 +146,60 @@ export const aptitudeQuestions = [
     difficulty: "hard",
     category: "Logical",
   },
-
-  // ==================== 15 PURE REASONING (16-30) ====================
   {
     id: 16,
+    question:
+      "Five students P, Q, R, S, T scored different marks. P scored more than Q but less than R. S scored less than T but more than P. R scored the highest. Who scored the second highest?",
+    options: ["P", "Q", "S", "T"],
+    correctAnswer: "T",
+    difficulty: "medium",
+    category: "Logical",
+  },
+  {
+    id: 17,
+    question:
+      "In a certain language, 'sky is blue' is written as 'mo ta ki', 'blue sea is deep' as 'ki ra mo su', and 'deep ocean wide' as 'su vu pa'. What is the code for 'sea'?",
+    options: ["ra", "su", "ki", "mo"],
+    correctAnswer: "ra",
+    difficulty: "hard",
+    category: "Logical",
+  },
+  {
+    id: 18,
+    question:
+      "A is the brother of B. B is the sister of C. C is the son of D. D is the wife of E. How is A related to E?",
+    options: ["Son", "Grandson", "Nephew", "Cannot be determined"],
+    correctAnswer: "Son",
+    difficulty: "medium",
+    category: "Logical",
+  },
+  {
+    id: 19,
+    question:
+      "A man starts from point X, walks 4 km East, then 3 km North, then 4 km West, then 3 km South. Where is he now relative to X?",
+    options: [
+      "4 km East of X",
+      "Back at X",
+      "3 km North of X",
+      "3 km South of X",
+    ],
+    correctAnswer: "Back at X",
+    difficulty: "medium",
+    category: "Logical",
+  },
+  {
+    id: 20,
+    question:
+      "In a class, students are seated in 5 rows. Ravi is in 3rd row from the front and 2nd row from the back. How many rows are in the class?",
+    options: ["4", "5", "6", "7"],
+    correctAnswer: "4",
+    difficulty: "easy",
+    category: "Logical",
+  },
+
+  // ==================== 20 PURE REASONING (21-40) ====================
+  {
+    id: 21,
     question:
       "If all bloops are bleeps and some bleeps are blips, which must be true?",
     options: [
@@ -162,7 +213,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 17,
+    id: 22,
     question: "Find the missing number: 7, 15, 32, 66, 134, ?",
     options: ["270", "272", "268", "274"],
     correctAnswer: "270",
@@ -170,7 +221,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 18,
+    id: 23,
     question:
       "Statement: All successful people are hardworking. Some hardworking people fail. Conclusion: I. Some successful people fail. II. Some who fail are hardworking.",
     options: [
@@ -184,7 +235,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 19,
+    id: 24,
     question:
       "In a certain code, 'RIVER' is written as '12345' and 'WATER' as '67849'. What is 'WINTER'?",
     options: ["628945", "628941", "628947", "628946"],
@@ -193,7 +244,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 20,
+    id: 25,
     question:
       "A is twice as efficient as B. B alone takes 12 days more than A and B together. How many days does A alone take?",
     options: ["8", "9", "10", "12"],
@@ -202,7 +253,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 21,
+    id: 26,
     question:
       "If the 5th term of an AP is 20 and 12th term is 48, what is the 20th term?",
     options: ["76", "80", "84", "88"],
@@ -211,7 +262,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 22,
+    id: 27,
     question:
       "Data: X > Y > Z, W < Y, X > V. Which of the following is definitely false?",
     options: ["V > Z", "W < X", "Y > V", "W > Z"],
@@ -220,7 +271,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 23,
+    id: 28,
     question: "Analogy: Doctor : Hospital :: Teacher : ?",
     options: ["School", "Student", "Book", "Classroom"],
     correctAnswer: "School",
@@ -228,7 +279,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 24,
+    id: 29,
     question:
       "A cube is painted red on all faces and cut into 125 smaller identical cubes. How many small cubes have exactly one face painted?",
     options: ["36", "48", "54", "60"],
@@ -237,7 +288,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 25,
+    id: 30,
     question:
       "If A + B means A is father of B, A × B means A is brother of B, A ÷ B means A is mother of B, then P × Q + R ÷ S means?",
     options: [
@@ -251,7 +302,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 26,
+    id: 31,
     question:
       "Find the odd one out: 8, 27, 64, 125, 216, 343, 512, 729 (based on a different pattern)",
     options: ["216", "343", "512", "729"],
@@ -260,7 +311,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 27,
+    id: 32,
     question:
       "If 64 people are in a room and each shakes hands with exactly 32 others, how many handshakes occur?",
     options: ["992", "1008", "1024", "1088"],
@@ -269,7 +320,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 28,
+    id: 33,
     question:
       "Statement: Some cats are rats. All rats are bats. Conclusion: I. Some cats are bats. II. No cat is bat.",
     options: ["Only I", "Only II", "Either I or II", "Neither"],
@@ -278,7 +329,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 29,
+    id: 34,
     question:
       "A train leaves at 13:00 hrs and reaches at 17:30 hrs covering 240 km. Another train leaves at 14:30 hrs in same direction at 80 km/h. When will second train overtake the first?",
     options: ["16:30", "17:00", "17:30", "18:00"],
@@ -287,7 +338,7 @@ export const aptitudeQuestions = [
     category: "Reasoning",
   },
   {
-    id: 30,
+    id: 35,
     question:
       "How many triangles are in a complete pentagram (star inside pentagon with all intersections)?",
     options: ["30", "32", "35", "40"],
@@ -295,10 +346,55 @@ export const aptitudeQuestions = [
     difficulty: "hard",
     category: "Reasoning",
   },
-
-  // ==================== 15 TECHNICAL (31-45) ====================
   {
-    id: 31,
+    id: 36,
+    question:
+      "A sequence follows the rule: each term = sum of the two preceding terms. If the 6th term is 13 and the 8th term is 34, what is the 7th term?",
+    options: ["20", "21", "22", "23"],
+    correctAnswer: "21",
+    difficulty: "medium",
+    category: "Reasoning",
+  },
+  {
+    id: 37,
+    question:
+      "If 'CAT' = 24, 'DOG' = 26, 'RAT' = 42, what is 'BAT'?",
+    options: ["23", "24", "22", "21"],
+    correctAnswer: "23",
+    difficulty: "medium",
+    category: "Reasoning",
+  },
+  {
+    id: 38,
+    question:
+      "Three bells ring at intervals of 9, 12, and 15 minutes respectively. They all ring together at 10:00 AM. When will they next ring together?",
+    options: ["11:00 AM", "11:30 AM", "12:00 PM", "11:45 AM"],
+    correctAnswer: "11:00 AM",
+    difficulty: "medium",
+    category: "Reasoning",
+  },
+  {
+    id: 39,
+    question:
+      "In a class of 40 students, 18 play chess, 16 play carom, and 5 play both. How many play neither?",
+    options: ["9", "10", "11", "12"],
+    correctAnswer: "11",
+    difficulty: "medium",
+    category: "Reasoning",
+  },
+  {
+    id: 40,
+    question:
+      "A boat travels 30 km upstream and 30 km downstream. Speed of stream is 5 km/h, speed of boat in still water is 10 km/h. Total time taken?",
+    options: ["8 hrs", "9 hrs", "10 hrs", "12 hrs"],
+    correctAnswer: "8 hrs",
+    difficulty: "hard",
+    category: "Reasoning",
+  },
+
+  // ==================== 20 TECHNICAL (41-60) ====================
+  {
+    id: 41,
     question:
       "What is the output of `console.log(typeof NaN)` in JavaScript?",
     options: ["'NaN'", "'number'", "'undefined'", "'object'"],
@@ -307,7 +403,7 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 32,
+    id: 42,
     question:
       "Which of the following is NOT a valid time complexity for a sorting algorithm?",
     options: ["O(n log n)", "O(n²)", "O(2ⁿ)", "O(n)"],
@@ -316,7 +412,7 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 33,
+    id: 43,
     question:
       "In React, which hook would you use to perform side effects (e.g., data fetching) after the component renders?",
     options: ["useState", "useEffect", "useContext", "useReducer"],
@@ -325,9 +421,8 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 34,
-    question:
-      "What does SQL `NULL` represent?",
+    id: 44,
+    question: "What does SQL `NULL` represent?",
     options: [
       "Zero",
       "Empty string",
@@ -339,7 +434,7 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 35,
+    id: 45,
     question:
       "Which HTTP method is typically used to update a resource partially?",
     options: ["PUT", "POST", "PATCH", "DELETE"],
@@ -348,16 +443,15 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 36,
-    question:
-      "What is the value of `[] == ![]` in JavaScript?",
+    id: 46,
+    question: "What is the value of `[] == ![]` in JavaScript?",
     options: ["true", "false", "undefined", "TypeError"],
     correctAnswer: "true",
     difficulty: "hard",
     category: "Technical",
   },
   {
-    id: 37,
+    id: 47,
     question:
       "Which of the following is a correct way to create a thread in Java?",
     options: [
@@ -371,9 +465,8 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 38,
-    question:
-      "What does ACID stand for in database transactions?",
+    id: 48,
+    question: "What does ACID stand for in database transactions?",
     options: [
       "Atomicity, Consistency, Isolation, Durability",
       "Accuracy, Concurrency, Integrity, Durability",
@@ -385,9 +478,8 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 39,
-    question:
-      "Which command is used to create a new branch in Git?",
+    id: 49,
+    question: "Which command is used to create a new branch in Git?",
     options: [
       "git branch <name>",
       "git checkout -b <name>",
@@ -399,16 +491,15 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 40,
-    question:
-      "What will be the output of `print(2**3**2)` in Python?",
+    id: 50,
+    question: "What will be the output of `print(2**3**2)` in Python?",
     options: ["64", "512", "12", "32"],
     correctAnswer: "512",
     difficulty: "hard",
     category: "Technical",
   },
   {
-    id: 41,
+    id: 51,
     question:
       "Which data structure is best suited for implementing a priority queue?",
     options: ["Array", "Stack", "Heap", "Linked List"],
@@ -417,7 +508,7 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 42,
+    id: 52,
     question:
       "In CSS, which property is used to control the stacking order of positioned elements?",
     options: ["z-stack", "layer-index", "z-index", "stack-order"],
@@ -426,27 +517,24 @@ export const aptitudeQuestions = [
     category: "Technical",
   },
   {
-    id: 43,
-    question:
-      "What is the default port for HTTPS?",
+    id: 53,
+    question: "What is the default port for HTTPS?",
     options: ["80", "443", "8080", "3306"],
     correctAnswer: "443",
     difficulty: "easy",
     category: "Technical",
   },
   {
-    id: 44,
-    question:
-      "Which of the following is NOT an OOP principle?",
+    id: 54,
+    question: "Which of the following is NOT an OOP principle?",
     options: ["Encapsulation", "Inheritance", "Polymorphism", "Compilation"],
     correctAnswer: "Compilation",
     difficulty: "easy",
     category: "Technical",
   },
   {
-    id: 45,
-    question:
-      "What does the `map()` function do in JavaScript?",
+    id: 55,
+    question: "What does the `map()` function do in JavaScript?",
     options: [
       "Creates a new array with results of calling a function on every element",
       "Filters elements based on a condition",
@@ -456,6 +544,57 @@ export const aptitudeQuestions = [
     correctAnswer:
       "Creates a new array with results of calling a function on every element",
     difficulty: "medium",
+    category: "Technical",
+  },
+  {
+    id: 56,
+    question:
+      "What is the worst-case time complexity of QuickSort?",
+    options: ["O(n log n)", "O(n²)", "O(n)", "O(log n)"],
+    correctAnswer: "O(n²)",
+    difficulty: "medium",
+    category: "Technical",
+  },
+  {
+    id: 57,
+    question:
+      "Which of the following CSS units is relative to the root element's font size?",
+    options: ["em", "rem", "px", "vh"],
+    correctAnswer: "rem",
+    difficulty: "easy",
+    category: "Technical",
+  },
+  {
+    id: 58,
+    question:
+      "In JavaScript, what does the `Promise.all()` method do?",
+    options: [
+      "Resolves when all promises resolve; rejects if any rejects",
+      "Resolves when the first promise resolves",
+      "Ignores rejected promises",
+      "Rejects only if all promises reject",
+    ],
+    correctAnswer:
+      "Resolves when all promises resolve; rejects if any rejects",
+    difficulty: "medium",
+    category: "Technical",
+  },
+  {
+    id: 59,
+    question:
+      "Which SQL clause is used to filter groups after aggregation?",
+    options: ["WHERE", "HAVING", "GROUP BY", "FILTER"],
+    correctAnswer: "HAVING",
+    difficulty: "medium",
+    category: "Technical",
+  },
+  {
+    id: 60,
+    question:
+      "What is the output of the following Python code?\n\nx = [1, 2, 3]\ny = x\ny.append(4)\nprint(x)",
+    options: ["[1, 2, 3]", "[1, 2, 3, 4]", "Error", "[4]"],
+    correctAnswer: "[1, 2, 3, 4]",
+    difficulty: "hard",
     category: "Technical",
   },
 ];
