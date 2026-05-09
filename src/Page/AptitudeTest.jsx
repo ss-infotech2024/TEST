@@ -3,24 +3,23 @@ import {
   ClipboardList, User, Mail, Phone, Filter, Clock, AlertTriangle,
   CheckCircle, Shield, Award, BookOpen, Brain,
   Lightbulb, Users, ChevronLeft, ChevronRight, Printer, ExternalLink,
-  Activity, WifiOff, Maximize2, Flag, Send, FileText,
+  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code 
 } from 'lucide-react';
 import { aptitudeQuestions } from '../aptitudeq';
 import image1 from "../assets/crt.png";
 import image2 from "../assets/databricks.png";
 import image3 from "../assets/germany.png";
-import image4 from "../assets/servicenow.png";
+import image4 from "../assets/servicecourse.png";
+import popimg from "../assets/corehiring.png"
 
 const DEFAULT_LEFT_IMAGES = [image1, image2];
 const DEFAULT_RIGHT_IMAGES = [image3, image4];
+const POPUP_IMAGES = [ popimg, image4];
 
 const AptitudeTest = () => {
-  // User Info
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-
-  // Test State
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [score, setScore] = useState(0);
@@ -30,15 +29,13 @@ const AptitudeTest = () => {
   const [timeLeft, setTimeLeft] = useState(3600);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [violationCount, setViolationCount] = useState(0);
-
-  // Submission State
+  const [showPopup, setShowPopup] = useState(true);
   const [submissionLoading, setSubmissionLoading] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [submissionSuccess, setSubmissionSuccess] = useState('');
   const [backendStatus, setBackendStatus] = useState('checking');
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  // Refs
   const scoreRef = useRef(0);
   const userAnswersRef = useRef([]);
   const violationCountRef = useRef(0);
@@ -48,12 +45,10 @@ const AptitudeTest = () => {
   const lastViolationTimeRef = useRef(0);
   const violationCooldownRef = useRef(false);
 
-  // Derived
   const filteredQuestions = categoryFilter === 'all'
     ? aptitudeQuestions
     : aptitudeQuestions.filter(q => q.category === categoryFilter);
 
-  // Constants
   const SUBMIT_ENDPOINT = 'https://ssinfotech-0x5s.onrender.com/api/submissions/submit';
   const HEALTH_ENDPOINTS = [
     'https://ssinfotech-0x5s.onrender.com/health',
@@ -62,7 +57,6 @@ const AptitudeTest = () => {
   const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfYourFormID/viewform';
   const VIOLATION_COOLDOWN_MS = 2000;
 
-  // Helpers
   const generateSubmissionId = () => 'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
   const formatTime = seconds => {
@@ -72,7 +66,6 @@ const AptitudeTest = () => {
     return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Fullscreen
   const enterFullscreen = useCallback(async () => {
     try {
       const el = document.documentElement;
@@ -90,7 +83,6 @@ const AptitudeTest = () => {
     else if (document.msExitFullscreen) document.msExitFullscreen();
   }, []);
 
-  // Backend
   const testBackendConnection = async () => {
     for (const endpoint of HEALTH_ENDPOINTS) {
       try {
@@ -152,7 +144,6 @@ const AptitudeTest = () => {
     }
   };
 
-  // Test Completion
   const handleTestCompletion = useCallback(async (finalScore, finalAnswers) => {
     if (testCompletedRef.current || hasSubmitted) return;
     testCompletedRef.current = true;
@@ -191,7 +182,6 @@ const AptitudeTest = () => {
     removeSecurityListeners();
   }, [userName, email, phone, filteredQuestions.length, categoryFilter, hasSubmitted, exitFullscreen]);
 
-  // Violations
   const handleViolation = useCallback(() => {
     if (testCompletedRef.current) return;
 
@@ -218,7 +208,6 @@ const AptitudeTest = () => {
     }
   }, [handleTestCompletion]);
 
-  // Security Handlers
   const visibilityHandler = useCallback(() => {
     if (document.hidden && !testCompletedRef.current) handleViolation();
   }, [handleViolation]);
@@ -282,7 +271,6 @@ const AptitudeTest = () => {
     document.body.style.webkitUserSelect = 'none';
   }, [visibilityHandler, blurHandler, fullscreenChangeHandler, keydownHandler, contextMenuHandler, beforeUnloadHandler]);
 
-  // Timer
   useEffect(() => {
     if (!testStarted || testCompletedRef.current || timeLeft <= 0) return;
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -307,7 +295,6 @@ const AptitudeTest = () => {
     };
   }, [testStarted, handleTestCompletion]);
 
-  // Init / Cleanup
   useEffect(() => {
     if (testStarted && !testCompletedRef.current) {
       setupSecurityListeners();
@@ -321,7 +308,6 @@ const AptitudeTest = () => {
     };
   }, [testStarted, setupSecurityListeners, removeSecurityListeners, enterFullscreen]);
 
-  // Backend Polling
   useEffect(() => {
     testBackendConnection();
     const interval = setInterval(() => {
@@ -331,7 +317,6 @@ const AptitudeTest = () => {
     return () => clearInterval(interval);
   }, [testStarted]);
 
-  // Validation
   const validateUserInfo = () => {
     if (!userName.trim()) { alert('Please enter your full name'); return false; }
     if (!email.trim()) { alert('Please enter your email address'); return false; }
@@ -347,7 +332,6 @@ const AptitudeTest = () => {
     return true;
   };
 
-  // Start Test
   const handleStartTest = async () => {
     if (!validateUserInfo()) return;
 
@@ -369,11 +353,11 @@ const AptitudeTest = () => {
     setTimeLeft(3600);
     setSubmissionError('');
     setSubmissionSuccess('');
+    setShowPopup(false);
 
     await testBackendConnection();
   };
 
-  // Answer & Navigation
   const handleAnswerSelect = answer => {
     if (!testStarted || testCompletedRef.current) return;
     setSelectedAnswer(answer);
@@ -423,7 +407,6 @@ const AptitudeTest = () => {
     }
   };
 
-  // Reset
   const resetTest = () => {
     testCompletedRef.current = false;
     scoreRef.current = 0;
@@ -449,10 +432,10 @@ const AptitudeTest = () => {
     setSubmissionSuccess('');
     setBackendStatus('checking');
     setHasSubmitted(false);
+    setShowPopup(true);
     testBackendConnection();
   };
 
-  // Style Helpers
   const getDifficultyColor = d =>
     d === 'medium' ? 'bg-yellow-100 text-yellow-800' :
     d === 'hard' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
@@ -460,13 +443,13 @@ const AptitudeTest = () => {
   const getCategoryColor = c =>
     c === 'Logical' ? 'bg-blue-100 text-blue-800' :
     c === 'Reasoning' ? 'bg-indigo-100 text-indigo-800' :
-    c === 'Soft Skills' ? 'bg-pink-100 text-pink-800' : 'bg-gray-100 text-gray-800';
+    c === 'Technical' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
 
   const getCategoryIcon = c => {
     switch (c) {
       case 'Logical': return <Brain size={16} className="mr-1" />;
       case 'Reasoning': return <Lightbulb size={16} className="mr-1" />;
-      case 'Soft Skills': return <Users size={16} className="mr-1" />;
+      case 'Technical': return <Code size={16} className="mr-1" />;
       default: return <BookOpen size={16} className="mr-1" />;
     }
   };
@@ -482,12 +465,11 @@ const AptitudeTest = () => {
   const getBackendStatusText = () =>
     backendStatus === 'connected' ? 'Connected' : backendStatus === 'disconnected' ? 'Offline Mode' : 'Checking...';
 
-  // Category Stats
   const getCategoryStats = () => {
     const stats = {
       Logical: { total: 0, correct: 0 },
       Reasoning: { total: 0, correct: 0 },
-      'Soft Skills': { total: 0, correct: 0 },
+      Technical: { total: 0, correct: 0 },
     };
     userAnswersRef.current.forEach(a => {
       if (stats[a.category]) {
@@ -498,119 +480,171 @@ const AptitudeTest = () => {
     return stats;
   };
 
-  // START SCREEN
-  if (!testStarted && !testCompleted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <div className="text-center mb-6">
-              <div className="flex justify-center mb-4">
-                <div className="bg-blue-100 p-4 rounded-full">
-                  <ClipboardList size={48} className="text-blue-600" />
-                </div>
-              </div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">Aptitude Assessment Test</h1>
-              <p className="text-gray-600">Comprehensive evaluation of your skills</p>
-            </div>
+  // Popup Component - Side by side images, wider popup
+  const PopupModal = () => {
+    if (!showPopup) return null;
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {[
-                { label: 'Full Name', icon: <User size={18} className="inline mr-2" />, value: userName, set: setUserName, type: 'text', placeholder: 'John Doe' },
-                { label: 'Email', icon: <Mail size={18} className="inline mr-2" />, value: email, set: setEmail, type: 'email', placeholder: 'john@example.com' },
-                { label: 'Phone Number', icon: <Phone size={18} className="inline mr-2" />, value: phone, set: setPhone, type: 'tel', placeholder: '+1234567890' },
-              ].map(({ label, icon, value, set, type, placeholder }) => (
-                <div key={label}>
-                  <label className="block text-lg font-medium text-gray-700 mb-2">{icon}{label} *</label>
-                  <input
-                    type={type} value={value} onChange={e => set(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={placeholder}
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl w-[800px] max-w-[90vw]">
+          {/* Header */}
+          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <Shield size={20} className="text-blue-600" />
+              Important Notice
+            </h2>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="text-gray-400 hover:text-gray-600 transition"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Images - Side by Side (Left-Right) */}
+          <div className="p-6">
+            <div className="flex gap-6 justify-center items-center">
+              {POPUP_IMAGES.map((img, idx) => (
+                <div key={idx} className="flex-1">
+                  <img 
+                    src={img} 
+                    alt={`Notice ${idx + 1}`} 
+                    className="w-full h-auto rounded border border-gray-200"
                   />
                 </div>
               ))}
-
-              <div>
-                <label className="block text-lg font-medium text-gray-700 mb-2">
-                  <Filter size={18} className="inline mr-2" />Test Category
-                </label>
-                <select
-                  value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Categories ({aptitudeQuestions.length} Questions)</option>
-                  <option value="Logical">Logical Reasoning Only</option>
-                  <option value="Reasoning">Pure Reasoning Only</option>
-                  <option value="Soft Skills">Soft Skills Only</option>
-                </select>
-              </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {[
-                { cat: 'Logical', icon: <Brain size={32} className="text-blue-600 mx-auto mb-2" />, bg: 'bg-blue-50', text: 'text-blue-600', label: 'text-blue-700' },
-                { cat: 'Reasoning', icon: <Lightbulb size={32} className="text-indigo-600 mx-auto mb-2" />, bg: 'bg-indigo-50', text: 'text-indigo-600', label: 'text-indigo-700' },
-                { cat: 'Soft Skills', icon: <Users size={32} className="text-pink-600 mx-auto mb-2" />, bg: 'bg-pink-50', text: 'text-pink-600', label: 'text-pink-700' },
-              ].map(({ cat, icon, bg, text, label }) => (
-                <div key={cat} className={`${bg} p-4 rounded-lg text-center`}>
-                  {icon}
-                  <div className={`text-2xl font-bold ${text}`}>
-                    {aptitudeQuestions.filter(q => q.category === cat).length}
-                  </div>
-                  <div className={`${label} font-medium`}>{cat}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center">
-                <Shield size={20} className="mr-2" /> Security Measures
-              </h3>
-              <ul className="list-disc list-inside text-red-700 space-y-1">
-                <li>Fullscreen mode is mandatory and enforced</li>
-                <li>Tab switching is prohibited (records violation)</li>
-                <li>Right-click and developer tools are disabled</li>
-                <li>3 security violations will auto-submit your test</li>
-              </ul>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
-                <FileText size={20} className="mr-2" /> Test Information
-              </h3>
-              <ul className="list-disc list-inside text-blue-700 space-y-1">
-                <li>Total Questions: {filteredQuestions.length}</li>
-                <li>Time Limit: 60 minutes</li>
-                <li>Multiple choice — no negative marking</li>
-                <li>Results auto-saved locally and to server</li>
-              </ul>
-            </div>
-
-            {backendStatus === 'disconnected' && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center justify-center text-yellow-700">
-                <WifiOff size={18} className="mr-2" />
-                Backend offline. Results will be saved locally.
-              </div>
-            )}
-
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-200 flex justify-center">
             <button
-              onClick={handleStartTest}
-              disabled={backendStatus === 'checking'}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center"
+              onClick={() => setShowPopup(false)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition flex items-center gap-2"
             >
-              {backendStatus === 'checking' ? (
-                <><Activity size={20} className="animate-spin mr-2" />Checking Connection...</>
-              ) : (
-                <><Maximize2 size={20} className="mr-2" />Start Test</>
-              )}
+              <CheckCircle size={16} />
+              Continue
             </button>
           </div>
         </div>
       </div>
     );
+  };
+
+  if (!testStarted && !testCompleted) {
+    return (
+      <>
+        <PopupModal />
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="text-center mb-6">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-blue-100 p-4 rounded-full">
+                    <ClipboardList size={48} className="text-blue-600" />
+                  </div>
+                </div>
+                <h1 className="text-4xl font-bold text-gray-800 mb-2">Aptitude Assessment Test</h1>
+                <p className="text-gray-600">Comprehensive evaluation of your skills</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {[
+                  { label: 'Full Name', icon: <User size={18} className="inline mr-2" />, value: userName, set: setUserName, type: 'text', placeholder: 'John Doe' },
+                  { label: 'Email', icon: <Mail size={18} className="inline mr-2" />, value: email, set: setEmail, type: 'email', placeholder: 'john@example.com' },
+                  { label: 'Phone Number', icon: <Phone size={18} className="inline mr-2" />, value: phone, set: setPhone, type: 'tel', placeholder: '+1234567890' },
+                ].map(({ label, icon, value, set, type, placeholder }) => (
+                  <div key={label}>
+                    <label className="block text-lg font-medium text-gray-700 mb-2">{icon}{label} *</label>
+                    <input
+                      type={type} value={value} onChange={e => set(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder={placeholder}
+                    />
+                  </div>
+                ))}
+
+                <div>
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
+                    <Filter size={18} className="inline mr-2" />Test Category
+                  </label>
+                  <select
+                    value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">All Categories ({aptitudeQuestions.length} Questions)</option>
+                    <option value="Logical">Logical Reasoning Only</option>
+                    <option value="Reasoning">Pure Reasoning Only</option>
+                    <option value="Technical">Technical Only</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                {[
+                  { cat: 'Logical', icon: <Brain size={32} className="text-blue-600 mx-auto mb-2" />, bg: 'bg-blue-50', text: 'text-blue-600', label: 'text-blue-700' },
+                  { cat: 'Reasoning', icon: <Lightbulb size={32} className="text-indigo-600 mx-auto mb-2" />, bg: 'bg-indigo-50', text: 'text-indigo-600', label: 'text-indigo-700' },
+                  { cat: 'Technical', icon: <Code size={32} className="text-purple-600 mx-auto mb-2" />, bg: 'bg-purple-50', text: 'text-purple-600', label: 'text-purple-700' },
+                ].map(({ cat, icon, bg, text, label }) => (
+                  <div key={cat} className={`${bg} p-4 rounded-lg text-center`}>
+                    {icon}
+                    <div className={`text-2xl font-bold ${text}`}>
+                      {aptitudeQuestions.filter(q => q.category === cat).length}
+                    </div>
+                    <div className={`${label} font-medium`}>{cat}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+                <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center">
+                  <Shield size={20} className="mr-2" /> Security Measures
+                </h3>
+                <ul className="list-disc list-inside text-red-700 space-y-1">
+                  <li>Fullscreen mode is mandatory and enforced</li>
+                  <li>Tab switching is prohibited (records violation)</li>
+                  <li>Right-click and developer tools are disabled</li>
+                  <li>3 security violations will auto-submit your test</li>
+                </ul>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-6 mb-8">
+                <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
+                  <FileText size={20} className="mr-2" /> Test Information
+                </h3>
+                <ul className="list-disc list-inside text-blue-700 space-y-1">
+                  <li>Total Questions: {filteredQuestions.length}</li>
+                  <li>Time Limit: 60 minutes</li>
+                  <li>Multiple choice — no negative marking</li>
+                  <li>Results auto-saved locally and to server</li>
+                </ul>
+              </div>
+
+              {backendStatus === 'disconnected' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center justify-center text-yellow-700">
+                  <WifiOff size={18} className="mr-2" />
+                  Backend offline. Results will be saved locally.
+                </div>
+              )}
+
+              <button
+                onClick={handleStartTest}
+                disabled={backendStatus === 'checking'}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center"
+              >
+                {backendStatus === 'checking' ? (
+                  <><Activity size={20} className="animate-spin mr-2" />Checking Connection...</>
+                ) : (
+                  <><Maximize2 size={20} className="mr-2" />Start Test</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 
-  // TEST IN PROGRESS
   if (testStarted && !testCompleted) {
     const currentQ = filteredQuestions[currentQuestion];
 
@@ -636,7 +670,6 @@ const AptitudeTest = () => {
 
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* LEFT SIDE IMAGES */}
             <div className="lg:w-1/5 space-y-6">
               {DEFAULT_LEFT_IMAGES.map((img, idx) => (
                 <div key={`left-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -645,7 +678,6 @@ const AptitudeTest = () => {
               ))}
             </div>
 
-            {/* CENTER - MCQ */}
             <div className="lg:w-3/5">
               <div className="bg-white rounded-2xl shadow-xl p-8">
                 <div className="flex justify-between items-center mb-8">
@@ -745,7 +777,6 @@ const AptitudeTest = () => {
               </div>
             </div>
 
-            {/* RIGHT SIDE IMAGES */}
             <div className="lg:w-1/5 space-y-6">
               {DEFAULT_RIGHT_IMAGES.map((img, idx) => (
                 <div key={`right-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -759,7 +790,6 @@ const AptitudeTest = () => {
     );
   }
 
-  // RESULTS SCREEN
   if (testCompleted) {
     const categoryStats = getCategoryStats();
     const finalScore = scoreRef.current;
@@ -811,15 +841,15 @@ const AptitudeTest = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {Object.entries(categoryStats).map(([category, stats]) => stats.total > 0 && (
                 <div key={category} className={`p-6 rounded-lg text-center ${
-                  category === 'Logical' ? 'bg-blue-50' : category === 'Reasoning' ? 'bg-indigo-50' : 'bg-pink-50'
+                  category === 'Logical' ? 'bg-blue-50' : category === 'Reasoning' ? 'bg-indigo-50' : 'bg-purple-50'
                 }`}>
                   <div className="flex justify-center mb-2">
                     {category === 'Logical' && <Brain size={32} className="text-blue-600" />}
                     {category === 'Reasoning' && <Lightbulb size={32} className="text-indigo-600" />}
-                    {category === 'Soft Skills' && <Users size={32} className="text-pink-600" />}
+                    {category === 'Technical' && <Code size={32} className="text-purple-600" />}
                   </div>
                   <div className={`text-3xl font-bold ${
-                    category === 'Logical' ? 'text-blue-600' : category === 'Reasoning' ? 'text-indigo-600' : 'text-pink-600'
+                    category === 'Logical' ? 'text-blue-600' : category === 'Reasoning' ? 'text-indigo-600' : 'text-purple-600'
                   }`}>{stats.correct}/{stats.total}</div>
                   <div className="font-medium text-gray-700">{category}</div>
                   <div className="text-sm text-gray-500">{((stats.correct / stats.total) * 100).toFixed(1)}%</div>
