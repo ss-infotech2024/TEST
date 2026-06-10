@@ -3,33 +3,29 @@ import {
   ClipboardList, User, Mail, Phone, Filter, Clock, AlertTriangle,
   CheckCircle, Shield, Award, BookOpen, Brain,
   Lightbulb, Users, ChevronLeft, ChevronRight, Printer, ExternalLink,
-  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code
+  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code, Building2
 } from 'lucide-react';
 import { aptitudeQuestions } from '../aptitudeq';
-import image1 from "../assets/newcrt.jpeg";
-import image2 from "../assets/corehiring.png";
-import image3 from "../assets/internship.jpeg";
-import image4 from "../assets/servicecourse.png";
-import popimg from "../assets/corehiring.png";
 
-const DEFAULT_LEFT_IMAGES = [image1, image2];
-const DEFAULT_RIGHT_IMAGES = [image3, image4];
-const POPUP_IMAGES = [popimg, image4];
+// ── Import your logo image here ──────────────────────────────────────────────
+// import logoImg from "../assets/logo.png"; // ← uncomment and update path
+
+
+
+const COMPANY_NAME = 'Segelboot '; // ← single source of truth
 
 // ─── Navbar ──────────────────────────────────────────────────────────────────
 const Navbar = () => (
   <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[80px] mt-2">
       <div className="flex items-center justify-between h-16">
+
         {/* Logo + Company Name */}
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <Brain size={22} className="text-white" />
-          </div>
-          <div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">SS Infotech</span>
-            <span className="block text-xs text-gray-500 leading-none">Aptitude Assessment Portal</span>
-          </div>
+        <div className="flex items-center gap-3 w-[300px] h-[300px]">
+          {/* ── Option A: icon-only logo (default) ─────────────────────────── */}
+          
+            <img src="segelboot.jpeg" alt="not found"  />
+     
         </div>
 
         {/* Right side */}
@@ -40,7 +36,7 @@ const Navbar = () => (
           </span>
           <div className="h-5 w-px bg-gray-200 hidden sm:block" />
           <span className="text-xs font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-            Powered by SS Infotech
+            Powered by {COMPANY_NAME}
           </span>
         </div>
       </div>
@@ -48,10 +44,13 @@ const Navbar = () => (
   </nav>
 );
 
-const AptitudeTest = () => {
+const Segelboot = () => {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  // ── Company name: pre-filled, read-only ─────────────────────────────────────
+  const [companyName] = useState(COMPANY_NAME);
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [score, setScore] = useState(0);
@@ -61,7 +60,7 @@ const AptitudeTest = () => {
   const [timeLeft, setTimeLeft] = useState(3600);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [violationCount, setViolationCount] = useState(0);
-  const [showPopup, setShowPopup] = useState(true);
+
   const [submissionLoading, setSubmissionLoading] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [submissionSuccess, setSubmissionSuccess] = useState('');
@@ -196,6 +195,7 @@ const AptitudeTest = () => {
       userName: userName.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
+      companyName,                          // ← included in submission
       score: accurateScore,
       totalQuestions: filteredQuestions.length,
       userAnswers: accurateAnswers,
@@ -215,7 +215,7 @@ const AptitudeTest = () => {
     setTestStarted(false);
     exitFullscreen();
     removeSecurityListeners();
-  }, [userName, email, phone, filteredQuestions.length, categoryFilter, hasSubmitted, exitFullscreen]);
+  }, [userName, email, phone, companyName, filteredQuestions.length, categoryFilter, hasSubmitted, exitFullscreen]);
 
   const handleViolation = useCallback(() => {
     if (testCompletedRef.current) return;
@@ -378,7 +378,6 @@ const AptitudeTest = () => {
     setTimeLeft(3600);
     setSubmissionError('');
     setSubmissionSuccess('');
-    setShowPopup(false);
 
     await testBackendConnection();
   };
@@ -457,7 +456,7 @@ const AptitudeTest = () => {
     setSubmissionSuccess('');
     setBackendStatus('checking');
     setHasSubmitted(false);
-    setShowPopup(true);
+
     testBackendConnection();
   };
 
@@ -507,51 +506,11 @@ const AptitudeTest = () => {
     return stats;
   };
 
-  // ─── Popup ──────────────────────────────────────────────────────────────────
-  const PopupModal = () => {
-    if (!showPopup) return null;
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl w-[800px] max-w-[90vw]">
-          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <Shield size={20} className="text-blue-600" />
-              Important Notice
-            </h2>
-            <button onClick={() => setShowPopup(false)} className="text-gray-400 hover:text-gray-600 transition">
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="p-6">
-            <div className="flex gap-6 justify-center items-center">
-              {POPUP_IMAGES.map((img, idx) => (
-                <div key={idx} className="flex-1">
-                  <img src={img} alt={`Notice ${idx + 1}`} className="w-full h-auto rounded border border-gray-200" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-center">
-            <button
-              onClick={() => setShowPopup(false)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition flex items-center gap-2"
-            >
-              <CheckCircle size={16} /> Continue
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // ─── Registration / Landing ──────────────────────────────────────────────────
   if (!testStarted && !testCompleted) {
     return (
       <>
         <Navbar />
-        <PopupModal />
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -564,27 +523,71 @@ const AptitudeTest = () => {
                   </div>
                 </div>
                 <h1 className="text-4xl font-bold text-gray-800 mb-2">Aptitude Assessment Test</h1>
-                <p className="text-gray-600">Comprehensive evaluation of your skills — by <span className="font-semibold text-blue-700">SS Infotech</span></p>
+                <p className="text-gray-600">Comprehensive evaluation of your skills — by <span className="font-semibold text-blue-700">{COMPANY_NAME}</span></p>
               </div>
 
               {/* User Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {[
-                  { label: 'Full Name',     icon: <User  size={18} className="inline mr-2" />, value: userName, set: setUserName, type: 'text',  placeholder: 'John Doe' },
-                  { label: 'Email',         icon: <Mail  size={18} className="inline mr-2" />, value: email,    set: setEmail,    type: 'email', placeholder: 'john@example.com' },
-                  { label: 'Phone Number',  icon: <Phone size={18} className="inline mr-2" />, value: phone,    set: setPhone,    type: 'tel',   placeholder: '+1234567890' },
-                ].map(({ label, icon, value, set, type, placeholder }) => (
-                  <div key={label}>
-                    <label className="block text-lg font-medium text-gray-700 mb-2">{icon}{label} *</label>
-                    <input
-                      type={type} value={value} onChange={e => set(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder={placeholder}
-                    />
-                  </div>
-                ))}
 
+                {/* Full Name */}
                 <div>
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
+                    <User size={18} className="inline mr-2" />Full Name *
+                  </label>
+                  <input
+                    type="text" value={userName} onChange={e => setUserName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
+                    <Mail size={18} className="inline mr-2" />Email *
+                  </label>
+                  <input
+                    type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
+                    <Phone size={18} className="inline mr-2" />Phone Number *
+                  </label>
+                  <input
+                    type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="+1234567890"
+                  />
+                </div>
+
+                {/* ── Company Name — pre-filled, locked ───────────────────────── */}
+                <div>
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
+                    <Building2 size={18} className="inline mr-2" />Company Name
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={companyName}
+                      readOnly
+                      disabled
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none font-medium"
+                    />
+                    {/* Lock badge */}
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-blue-100 text-blue-600 font-semibold px-2 py-0.5 rounded-full">
+                      Fixed
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 ml-1">Organisation conducting this test</p>
+                </div>
+
+                {/* Category Filter */}
+                <div className="md:col-span-2">
                   <label className="block text-lg font-medium text-gray-700 mb-2">
                     <Filter size={18} className="inline mr-2" />Test Category
                   </label>
@@ -675,25 +678,18 @@ const AptitudeTest = () => {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-6 justify-center">
 
             {/* Left Ad Column */}
-            <div className="lg:w-1/5 space-y-6">
-              {DEFAULT_LEFT_IMAGES.map((img, idx) => (
-                <div key={`left-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
-                  <img src={img} alt={`Advertisement ${idx + 1}`} className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300" />
-                </div>
-              ))}
-            </div>
+            
 
             {/* Main Question Panel */}
-            <div className="lg:w-3/5">
-              <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="lg:w-3/5 ">
+              <div className="bg-white rounded-2xl shadow-xl p-8 ">
 
                 {/* Top Bar */}
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center mb-6 ">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800 flex items-center">
                       <ClipboardList size={24} className="mr-2" /> Aptitude Test
@@ -710,7 +706,6 @@ const AptitudeTest = () => {
                       <Clock size={18} className="mr-1" />{formatTime(timeLeft)}
                     </div>
                     <div className="text-gray-600">Q {currentQuestion + 1} / {filteredQuestions.length}</div>
-                    {/* Compact violation indicator — replaces the top banner */}
                     <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-1 px-2 py-0.5 rounded-full ${
                       violationCount === 0 ? 'bg-green-100 text-green-700' :
                       violationCount === 1 ? 'bg-yellow-100 text-yellow-700' :
@@ -811,14 +806,7 @@ const AptitudeTest = () => {
               </div>
             </div>
 
-            {/* Right Ad Column */}
-            <div className="lg:w-1/5 space-y-6">
-              {DEFAULT_RIGHT_IMAGES.map((img, idx) => (
-                <div key={`right-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
-                  <img src={img} alt={`Advertisement ${idx + 1}`} className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300" />
-                </div>
-              ))}
-            </div>
+          
           </div>
         </div>
       </div>
@@ -949,4 +937,4 @@ const AptitudeTest = () => {
   return null;
 };
 
-export default AptitudeTest;
+export default Segelboot;
