@@ -625,13 +625,7 @@ const AptitudeTest = () => {
                 <p className="text-gray-600">Comprehensive evaluation of your skills — by <span className="font-semibold text-blue-700">{COMPANY_NAME}</span></p>
               </div>
 
-              {/* Server status */}
-              <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg mb-6 text-sm font-medium ${getBackendStatusColor()}`}>
-                {getBackendStatusIcon()}{getBackendStatusText()}
-                {backendStatus === 'disconnected' && (
-                  <button onClick={testBackendConnection} className="ml-2 underline text-yellow-700 hover:text-yellow-900 text-xs">Retry</button>
-                )}
-              </div>
+              
 
               {/* User info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
