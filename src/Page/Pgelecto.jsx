@@ -3,36 +3,37 @@ import {
   ClipboardList, User, Mail, Phone, Filter, Clock, AlertTriangle,
   CheckCircle, Shield, Award, BookOpen, Brain,
   Lightbulb, Users, ChevronLeft, ChevronRight, Printer, ExternalLink,
-  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code, Building2
+  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code, Building2,
+  RefreshCw
 } from 'lucide-react';
 import { aptitudeQuestions } from '../aptitudeq';
 
-// ── Import your logo image here ──────────────────────────────────────────────
-// import logoImg from "../assets/logo.png"; // ← uncomment and update path
+const COMPANY_NAME   = 'PG Electroplast';
+const BASE_URL       = 'https://ssinfotech-0x5s.onrender.com';  // ✅ Fixed: http not https for local
+const SUBMIT_ENDPOINT = `${BASE_URL}/api/submissions/submit`;
+const HEALTH_ENDPOINTS = [
+  `${BASE_URL}/api/v1/health`,
+  `${BASE_URL}/health`,
+  `${BASE_URL}/api/health`,
+];
+const GOOGLE_FORM_URL     = 'https://docs.google.com/forms/d/e/1FAIpQLSfYourFormID/viewform';
+const VIOLATION_COOLDOWN_MS = 2000;
 
-
-
-const COMPANY_NAME = 'PG Electroplast '; // ← single source of truth
-
-// ─── Navbar ──────────────────────────────────────────────────────────────────
+// ─── Navbar ───────────────────────────────────────────────────────────────────
 const Navbar = () => (
   <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[85px] mt-2">
       <div className="flex items-center justify-between h-16">
-
-        {/* Logo + Company Name */}
-        <div className="flex items-center gap-3  w-[100px] h-[100px]">
-          {/* ── Option A: icon-only logo (default) ─────────────────────────── */}
-          
-            <img src="logo-light.png" alt="not found"  />
-     
+        <div className="flex items-center gap-3">
+          {/* Logo placeholder - replace logo-light.png with your actual logo file */}
+          <div className="h-[100px] w-[100px] mt-[50px]">
+            <img src="logo-light.png" alt="" />
+          </div>
+    
         </div>
-
-        {/* Right side */}
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline-flex items-center gap-1.5 text-sm text-gray-500">
-            <ClipboardList size={15} />
-            Online Test Platform
+            <ClipboardList size={15} /> Online Test Platform
           </span>
           <div className="h-5 w-px bg-gray-200 hidden sm:block" />
           <span className="text-xs font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
@@ -45,34 +46,35 @@ const Navbar = () => (
 );
 
 const Pgelecto = () => {
-  const [userName, setUserName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  // ── Company name: pre-filled, read-only ─────────────────────────────────────
-  const [companyName] = useState(COMPANY_NAME);
+  const [userName, setUserName]   = useState('');
+  const [email, setEmail]         = useState('');
+  const [phone, setPhone]         = useState('');
+  const [companyName]             = useState(COMPANY_NAME);
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState('');
-  const [score, setScore] = useState(0);
-  const [testStarted, setTestStarted] = useState(false);
-  const [testCompleted, setTestCompleted] = useState(false);
-  const [userAnswers, setUserAnswers] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(3600);
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [violationCount, setViolationCount] = useState(0);
+  const [selectedAnswer, setSelectedAnswer]   = useState('');
+  const [score, setScore]                     = useState(0);
+  const [testStarted, setTestStarted]         = useState(false);
+  const [testCompleted, setTestCompleted]     = useState(false);
+  const [userAnswers, setUserAnswers]         = useState([]);
+  const [timeLeft, setTimeLeft]               = useState(3600);
+  const [categoryFilter, setCategoryFilter]   = useState('all');
+  const [violationCount, setViolationCount]   = useState(0);
 
   const [submissionLoading, setSubmissionLoading] = useState(false);
-  const [submissionError, setSubmissionError] = useState('');
+  const [submissionError, setSubmissionError]     = useState('');
   const [submissionSuccess, setSubmissionSuccess] = useState('');
-  const [backendStatus, setBackendStatus] = useState('checking');
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [backendStatus, setBackendStatus]         = useState('checking');
+  const [hasSubmitted, setHasSubmitted]           = useState(false);
+  const [retrying, setRetrying]                   = useState(false);
+  const [lastSubmissionData, setLastSubmissionData] = useState(null);
 
-  const scoreRef = useRef(0);
-  const userAnswersRef = useRef([]);
-  const violationCountRef = useRef(0);
-  const testCompletedRef = useRef(false);
-  const timerIntervalRef = useRef(null);
-  const startTimeRef = useRef(null);
+  const scoreRef             = useRef(0);
+  const userAnswersRef       = useRef([]);
+  const violationCountRef    = useRef(0);
+  const testCompletedRef     = useRef(false);
+  const timerIntervalRef     = useRef(null);
+  const startTimeRef         = useRef(null);
   const lastViolationTimeRef = useRef(0);
   const violationCooldownRef = useRef(false);
 
@@ -80,19 +82,12 @@ const Pgelecto = () => {
     ? aptitudeQuestions
     : aptitudeQuestions.filter(q => q.category === categoryFilter);
 
-  const SUBMIT_ENDPOINT = 'https://ssinfotech-0x5s.onrender.com/api/submissions/submit';
-  const HEALTH_ENDPOINTS = [
-    'https://ssinfotech-0x5s.onrender.com/health',
-    'https://ssinfotech-0x5s.onrender.com/api/health',
-  ];
-  const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfYourFormID/viewform';
-  const VIOLATION_COOLDOWN_MS = 2000;
-
+  // ─── Helpers ────────────────────────────────────────────────────────────────
   const generateSubmissionId = () =>
     'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
   const formatTime = seconds => {
-    const hrs = Math.floor(seconds / 3600);
+    const hrs  = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -101,26 +96,30 @@ const Pgelecto = () => {
   const enterFullscreen = useCallback(async () => {
     try {
       const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen();
+      if      (el.requestFullscreen)       await el.requestFullscreen();
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-      else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+      else if (el.msRequestFullscreen)     await el.msRequestFullscreen();
     } catch {
       alert('Please allow fullscreen mode. Press F11 to enter manually.');
     }
   }, []);
 
   const exitFullscreen = useCallback(() => {
-    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    if      (document.exitFullscreen)       document.exitFullscreen().catch(() => {});
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if (document.msExitFullscreen) document.msExitFullscreen();
+    else if (document.msExitFullscreen)     document.msExitFullscreen();
   }, []);
 
+  // ─── Backend ─────────────────────────────────────────────────────────────────
   const testBackendConnection = async () => {
     for (const endpoint of HEALTH_ENDPOINTS) {
       try {
-        const res = await fetch(endpoint, { method: 'GET', signal: AbortSignal.timeout(5000) });
+        const res = await fetch(endpoint, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000),
+        });
         if (res.ok) { setBackendStatus('connected'); return true; }
-      } catch { }
+      } catch { /* try next */ }
     }
     setBackendStatus('disconnected');
     return false;
@@ -129,7 +128,7 @@ const Pgelecto = () => {
   const saveToLocalStorage = (submission, synced = false) => {
     try {
       const existing = JSON.parse(localStorage.getItem('aptitudeTestSubmissions') || '[]');
-      const idx = existing.findIndex(s => s.submissionId === submission.submissionId);
+      const idx   = existing.findIndex(s => s.submissionId === submission.submissionId);
       const entry = { ...submission, localSaveTime: new Date().toISOString(), syncedToBackend: synced };
       if (idx !== -1) existing[idx] = entry;
       else existing.unshift(entry);
@@ -137,29 +136,89 @@ const Pgelecto = () => {
     } catch (e) { console.error('localStorage error:', e); }
   };
 
-  const submitTestToBackend = async submissionData => {
+  // ✅ FIXED: proper timeout, detailed error logging, correct URL
+  const submitTestToBackend = async (submissionData) => {
     try {
       setSubmissionLoading(true);
       setSubmissionError('');
       setSubmissionSuccess('');
+
+      console.log('📤 Submitting to:', SUBMIT_ENDPOINT);
+      console.log('📦 Payload:', JSON.stringify(submissionData, null, 2));
+
       const res = await fetch(SUBMIT_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify(submissionData),
+        signal: AbortSignal.timeout(15000), // ✅ 15s timeout
       });
-      const result = await res.json();
+
+      console.log('📬 Response status:', res.status);
+
+      // ✅ Always read body, even on error
+      let result;
+      try {
+        result = await res.json();
+      } catch {
+        result = { success: false, error: `Non-JSON response (HTTP ${res.status})` };
+      }
+
+      console.log('📬 Response body:', result);
+
       if (res.ok && result.success) {
         setSubmissionSuccess('Your test results have been successfully recorded!');
         setBackendStatus('connected');
         return { ...result, synced: true };
       }
-      throw new Error(result.error || 'Submission failed');
+
+      // ✅ Show the actual server error message
+      throw new Error(result.error || result.message || `Server returned ${res.status}`);
+
     } catch (error) {
-      setSubmissionError('Results saved locally. Will sync when connection is restored.');
+      console.error('❌ Submission failed:', error.name, error.message);
+
+      // ✅ Specific error messages per failure type
+      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+        setSubmissionError(
+          'Server is not responding. Please ensure your backend is running on port 10000.'
+        );
+      } else if (error.message.toLowerCase().includes('failed to fetch') ||
+                 error.message.toLowerCase().includes('networkerror')) {
+        setSubmissionError(
+          'Cannot connect to backend at localhost:10000. Please start your server.'
+        );
+      } else {
+        setSubmissionError(`Submission error: ${error.message}. Results saved locally.`);
+      }
+
       setBackendStatus('disconnected');
       return { synced: false, error: error.message };
     } finally {
       setSubmissionLoading(false);
+    }
+  };
+
+  // ✅ Retry submission from localStorage
+  const handleRetrySubmission = async () => {
+    setRetrying(true);
+    try {
+      const saved  = JSON.parse(localStorage.getItem('aptitudeTestSubmissions') || '[]');
+      const latest = saved.find(s => !s.syncedToBackend);
+      if (!latest) {
+        setSubmissionError('No pending submission found to retry.');
+        return;
+      }
+      const result = await submitTestToBackend(latest);
+      if (result.synced) {
+        saveToLocalStorage(latest, true);
+        setSubmissionSuccess('Results successfully synced to server!');
+        setSubmissionError('');
+      }
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -176,6 +235,7 @@ const Pgelecto = () => {
     }
   };
 
+  // ─── Test Completion ─────────────────────────────────────────────────────────
   const handleTestCompletion = useCallback(async (finalScore, finalAnswers) => {
     if (testCompletedRef.current || hasSubmitted) return;
     testCompletedRef.current = true;
@@ -185,28 +245,32 @@ const Pgelecto = () => {
       timerIntervalRef.current = null;
     }
 
-    const accurateScore = finalScore !== undefined ? finalScore : scoreRef.current;
+    const accurateScore   = finalScore   !== undefined ? finalScore   : scoreRef.current;
     const accurateAnswers = finalAnswers !== undefined ? finalAnswers : userAnswersRef.current;
     const timeTaken = startTimeRef.current
       ? Math.floor((Date.now() - startTimeRef.current) / 1000)
       : 3600 - timeLeft;
 
     const submissionData = {
-      userName: userName.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim(),
-      companyName,                          // ← included in submission
-      score: accurateScore,
+      userName:       userName.trim(),
+      email:          email.trim().toLowerCase(),
+      phone:          phone.trim(),
+      company:        companyName.trim(),           // ✅ FIXED: use companyName state
+      score:          accurateScore,
       totalQuestions: filteredQuestions.length,
-      userAnswers: accurateAnswers,
+      userAnswers:    accurateAnswers,
       violationCount: violationCountRef.current,
       categoryFilter,
       timeTaken,
-      submittedAt: new Date().toISOString(),
-      submissionId: generateSubmissionId(),
+      submittedAt:    new Date().toISOString(),
+      submissionId:   generateSubmissionId(),
     };
 
+    // Save locally first (guaranteed)
     saveToLocalStorage(submissionData, false);
+    setLastSubmissionData(submissionData);
+
+    // Then try backend
     const result = await submitTestToBackend(submissionData);
     saveToLocalStorage(submissionData, result.synced);
 
@@ -215,8 +279,9 @@ const Pgelecto = () => {
     setTestStarted(false);
     exitFullscreen();
     removeSecurityListeners();
-  }, [userName, email, phone, companyName, filteredQuestions.length, categoryFilter, hasSubmitted, exitFullscreen]);
+  }, [userName, email, phone, companyName, filteredQuestions.length, categoryFilter, hasSubmitted, exitFullscreen, timeLeft]);  // ✅ Added companyName to deps
 
+  // ─── Security ────────────────────────────────────────────────────────────────
   const handleViolation = useCallback(() => {
     if (testCompletedRef.current) return;
     const now = Date.now();
@@ -239,23 +304,14 @@ const Pgelecto = () => {
     }
   }, [handleTestCompletion]);
 
-  const visibilityHandler = useCallback(() => {
-    if (document.hidden && !testCompletedRef.current) handleViolation();
-  }, [handleViolation]);
-
-  const blurHandler = useCallback(() => {
-    if (!testCompletedRef.current) {
-      setTimeout(() => { if (!testCompletedRef.current) handleViolation(); }, 100);
-    }
-  }, [handleViolation]);
-
+  const visibilityHandler     = useCallback(() => { if (document.hidden && !testCompletedRef.current) handleViolation(); }, [handleViolation]);
+  const blurHandler           = useCallback(() => { if (!testCompletedRef.current) setTimeout(() => { if (!testCompletedRef.current) handleViolation(); }, 100); }, [handleViolation]);
   const fullscreenChangeHandler = useCallback(() => {
     if (!testCompletedRef.current && !document.fullscreenElement && !document.webkitFullscreenElement) {
       handleViolation();
       setTimeout(() => { if (!testCompletedRef.current) enterFullscreen(); }, 500);
     }
   }, [handleViolation, enterFullscreen]);
-
   const keydownHandler = useCallback(e => {
     if (testCompletedRef.current) return;
     if (e.key === 'F12' || e.key === 'Escape') { e.preventDefault(); handleViolation(); return; }
@@ -263,17 +319,9 @@ const Pgelecto = () => {
     if (e.ctrlKey && e.key === 'u') { e.preventDefault(); handleViolation(); return; }
     if (e.altKey && e.key === 'Tab') handleViolation();
   }, [handleViolation]);
-
-  const contextMenuHandler = useCallback(e => {
-    if (!testCompletedRef.current) { e.preventDefault(); handleViolation(); }
-  }, [handleViolation]);
-
+  const contextMenuHandler  = useCallback(e => { if (!testCompletedRef.current) { e.preventDefault(); handleViolation(); } }, [handleViolation]);
   const beforeUnloadHandler = useCallback(e => {
-    if (!testCompletedRef.current) {
-      e.preventDefault();
-      e.returnValue = 'Test in progress! Are you sure you want to leave?';
-      handleViolation();
-    }
+    if (!testCompletedRef.current) { e.preventDefault(); e.returnValue = 'Test in progress!'; handleViolation(); }
   }, [handleViolation]);
 
   const removeSecurityListeners = useCallback(() => {
@@ -298,41 +346,22 @@ const Pgelecto = () => {
     document.body.style.webkitUserSelect = 'none';
   }, [visibilityHandler, blurHandler, fullscreenChangeHandler, keydownHandler, contextMenuHandler, beforeUnloadHandler]);
 
+  // ─── Timer ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!testStarted || testCompletedRef.current || timeLeft <= 0) return;
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-
     timerIntervalRef.current = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timerIntervalRef.current);
-          timerIntervalRef.current = null;
-          handleTestCompletion();
-          return 0;
-        }
+        if (prev <= 1) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; handleTestCompletion(); return 0; }
         return prev - 1;
       });
     }, 1000);
-
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-    };
+    return () => { if (timerIntervalRef.current) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; } };
   }, [testStarted, handleTestCompletion]);
 
   useEffect(() => {
-    if (testStarted && !testCompletedRef.current) {
-      setupSecurityListeners();
-      enterFullscreen();
-    }
-    return () => {
-      if (!testStarted) {
-        removeSecurityListeners();
-        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      }
-    };
+    if (testStarted && !testCompletedRef.current) { setupSecurityListeners(); enterFullscreen(); }
+    return () => { if (!testStarted) { removeSecurityListeners(); if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); } };
   }, [testStarted, setupSecurityListeners, removeSecurityListeners, enterFullscreen]);
 
   useEffect(() => {
@@ -344,128 +373,78 @@ const Pgelecto = () => {
     return () => clearInterval(interval);
   }, [testStarted]);
 
+  // ─── Validation + Start ───────────────────────────────────────────────────────
   const validateUserInfo = () => {
     if (!userName.trim()) { alert('Please enter your full name'); return false; }
-    if (!email.trim()) { alert('Please enter your email address'); return false; }
-    if (!phone.trim()) { alert('Please enter your phone number'); return false; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert('Please enter a valid email address'); return false;
-    }
-    if (!/^[0-9+\-\s()]{10,15}$/.test(phone.trim())) {
-      alert('Please enter a valid phone number'); return false;
-    }
+    if (!email.trim())    { alert('Please enter your email address'); return false; }
+    if (!phone.trim())    { alert('Please enter your phone number'); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address'); return false; }
+    if (!/^[0-9+\-\s()]{10,15}$/.test(phone.trim())) { alert('Please enter a valid phone number'); return false; }
     return true;
   };
 
   const handleStartTest = async () => {
     if (!validateUserInfo()) return;
-
     testCompletedRef.current = false;
-    scoreRef.current = 0;
-    userAnswersRef.current = [];
+    scoreRef.current         = 0;
+    userAnswersRef.current   = [];
     violationCountRef.current = 0;
-    startTimeRef.current = Date.now();
-    lastViolationTimeRef.current = 0;
-    violationCooldownRef.current = false;
-
+    startTimeRef.current     = Date.now();
+    lastViolationTimeRef.current  = 0;
+    violationCooldownRef.current  = false;
     setTestStarted(true);
-    setUserAnswers([]);
-    setScore(0);
-    setCurrentQuestion(0);
-    setSelectedAnswer('');
-    setViolationCount(0);
-    setHasSubmitted(false);
-    setTimeLeft(3600);
-    setSubmissionError('');
-    setSubmissionSuccess('');
-
+    setUserAnswers([]); setScore(0); setCurrentQuestion(0); setSelectedAnswer('');
+    setViolationCount(0); setHasSubmitted(false); setTimeLeft(3600);
+    setSubmissionError(''); setSubmissionSuccess(''); setLastSubmissionData(null);
     await testBackendConnection();
   };
 
-  const handleAnswerSelect = answer => {
-    if (!testStarted || testCompletedRef.current) return;
-    setSelectedAnswer(answer);
-  };
+  const handleAnswerSelect = answer => { if (!testStarted || testCompletedRef.current) return; setSelectedAnswer(answer); };
 
   const handleNextQuestion = () => {
     if (!selectedAnswer || testCompletedRef.current) return;
-
     const q = filteredQuestions[currentQuestion];
     const isCorrect = selectedAnswer === q.correctAnswer;
-
-    const newAnswer = {
-      questionId: q.id,
-      question: q.question,
-      selectedAnswer,
-      correctAnswer: q.correctAnswer,
-      isCorrect,
-      difficulty: q.difficulty,
-      category: q.category,
-    };
-
+    const newAnswer = { questionId: q.id, question: q.question, selectedAnswer, correctAnswer: q.correctAnswer, isCorrect, difficulty: q.difficulty, category: q.category };
     const existingIdx = userAnswersRef.current.findIndex(a => a.questionId === q.id);
-
     if (existingIdx !== -1) {
       const prev = userAnswersRef.current[existingIdx];
-      if (prev.isCorrect && !isCorrect) scoreRef.current -= 1;
+      if (prev.isCorrect && !isCorrect)  scoreRef.current -= 1;
       else if (!prev.isCorrect && isCorrect) scoreRef.current += 1;
-      const updated = [...userAnswersRef.current];
-      updated[existingIdx] = newAnswer;
+      const updated = [...userAnswersRef.current]; updated[existingIdx] = newAnswer;
       userAnswersRef.current = updated;
     } else {
       userAnswersRef.current = [...userAnswersRef.current, newAnswer];
       if (isCorrect) scoreRef.current += 1;
     }
-
     const nextAnswers = userAnswersRef.current;
-    const nextScore = scoreRef.current;
-    setUserAnswers(nextAnswers);
-    setScore(nextScore);
-
+    const nextScore   = scoreRef.current;
+    setUserAnswers(nextAnswers); setScore(nextScore);
     const isLast = currentQuestion === filteredQuestions.length - 1;
-    if (!isLast) {
-      setCurrentQuestion(c => c + 1);
-      setSelectedAnswer('');
-    } else {
-      handleTestCompletion(nextScore, nextAnswers);
-    }
+    if (!isLast) { setCurrentQuestion(c => c + 1); setSelectedAnswer(''); }
+    else handleTestCompletion(nextScore, nextAnswers);
   };
 
   const resetTest = () => {
-    testCompletedRef.current = false;
-    scoreRef.current = 0;
-    userAnswersRef.current = [];
-    violationCountRef.current = 0;
-    startTimeRef.current = null;
-    lastViolationTimeRef.current = 0;
-    violationCooldownRef.current = false;
-
-    setUserName('');
-    setEmail('');
-    setPhone('');
-    setTestStarted(false);
-    setTestCompleted(false);
-    setCurrentQuestion(0);
-    setSelectedAnswer('');
-    setScore(0);
-    setUserAnswers([]);
-    setTimeLeft(3600);
-    setCategoryFilter('all');
-    setViolationCount(0);
-    setSubmissionError('');
-    setSubmissionSuccess('');
-    setBackendStatus('checking');
-    setHasSubmitted(false);
-
+    testCompletedRef.current = false; scoreRef.current = 0; userAnswersRef.current = [];
+    violationCountRef.current = 0; startTimeRef.current = null;
+    lastViolationTimeRef.current = 0; violationCooldownRef.current = false;
+    setUserName(''); setEmail(''); setPhone('');
+    setTestStarted(false); setTestCompleted(false); setCurrentQuestion(0);
+    setSelectedAnswer(''); setScore(0); setUserAnswers([]); setTimeLeft(3600);
+    setCategoryFilter('all'); setViolationCount(0);
+    setSubmissionError(''); setSubmissionSuccess('');
+    setBackendStatus('checking'); setHasSubmitted(false); setLastSubmissionData(null);
     testBackendConnection();
   };
 
+  // ─── UI Helpers ───────────────────────────────────────────────────────────────
   const getDifficultyColor = d =>
     d === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-    d === 'hard'   ? 'bg-red-100 text-red-800'    : 'bg-green-100 text-green-800';
+    d === 'hard'   ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
 
   const getCategoryColor = c =>
-    c === 'Logical'   ? 'bg-blue-100 text-blue-800'   :
+    c === 'Logical'   ? 'bg-blue-100 text-blue-800' :
     c === 'Reasoning' ? 'bg-indigo-100 text-indigo-800' :
     c === 'Technical' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
 
@@ -474,39 +453,32 @@ const Pgelecto = () => {
       case 'Logical':   return <Brain    size={16} className="mr-1" />;
       case 'Reasoning': return <Lightbulb size={16} className="mr-1" />;
       case 'Technical': return <Code     size={16} className="mr-1" />;
-      default:          return <BookOpen  size={16} className="mr-1" />;
+      default:          return <BookOpen size={16} className="mr-1" />;
     }
   };
 
   const getBackendStatusColor = () =>
-    backendStatus === 'connected'    ? 'bg-green-100 text-green-800'  :
+    backendStatus === 'connected'    ? 'bg-green-100 text-green-800' :
     backendStatus === 'disconnected' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800';
 
   const getBackendStatusIcon = () =>
     backendStatus === 'connected'    ? <CheckCircle size={14} className="mr-1" /> :
     backendStatus === 'disconnected' ? <WifiOff     size={14} className="mr-1" /> :
-                                      <Activity    size={14} className="mr-1" />;
+                                      <Activity    size={14} className="mr-1 animate-spin" />;
 
   const getBackendStatusText = () =>
-    backendStatus === 'connected'    ? 'Connected'   :
+    backendStatus === 'connected'    ? 'Connected' :
     backendStatus === 'disconnected' ? 'Offline Mode' : 'Checking...';
 
   const getCategoryStats = () => {
-    const stats = {
-      Logical:   { total: 0, correct: 0 },
-      Reasoning: { total: 0, correct: 0 },
-      Technical: { total: 0, correct: 0 },
-    };
-    userAnswersRef.current.forEach(a => {
-      if (stats[a.category]) {
-        stats[a.category].total++;
-        if (a.isCorrect) stats[a.category].correct++;
-      }
-    });
+    const stats = { Logical: { total: 0, correct: 0 }, Reasoning: { total: 0, correct: 0 }, Technical: { total: 0, correct: 0 } };
+    userAnswersRef.current.forEach(a => { if (stats[a.category]) { stats[a.category].total++; if (a.isCorrect) stats[a.category].correct++; } });
     return stats;
   };
 
-  // ─── Registration / Landing ──────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // REGISTRATION SCREEN
+  // ─────────────────────────────────────────────────────────────────────────────
   if (!testStarted && !testCompleted) {
     return (
       <>
@@ -524,77 +496,43 @@ const Pgelecto = () => {
                 </div>
                 <h1 className="text-4xl font-bold text-gray-800 mb-2">Aptitude Assessment Test</h1>
                 <p className="text-gray-600">Comprehensive evaluation of your skills — by <span className="font-semibold text-blue-700">{COMPANY_NAME}</span></p>
+
+                {/* Backend status badge */}
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mt-3 ${getBackendStatusColor()}`}>
+                  {getBackendStatusIcon()}{getBackendStatusText()}
+                </div>
               </div>
 
               {/* User Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-
-                {/* Full Name */}
                 <div>
-                  <label className="block text-lg font-medium text-gray-700 mb-2">
-                    <User size={18} className="inline mr-2" />Full Name *
-                  </label>
-                  <input
-                    type="text" value={userName} onChange={e => setUserName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="John Doe"
-                  />
+                  <label className="block text-lg font-medium text-gray-700 mb-2"><User size={18} className="inline mr-2" />Full Name *</label>
+                  <input type="text" value={userName} onChange={e => setUserName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="John Doe" />
                 </div>
-
-                {/* Email */}
                 <div>
-                  <label className="block text-lg font-medium text-gray-700 mb-2">
-                    <Mail size={18} className="inline mr-2" />Email *
-                  </label>
-                  <input
-                    type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="john@example.com"
-                  />
+                  <label className="block text-lg font-medium text-gray-700 mb-2"><Mail size={18} className="inline mr-2" />Email *</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="john@example.com" />
                 </div>
-
-                {/* Phone */}
                 <div>
-                  <label className="block text-lg font-medium text-gray-700 mb-2">
-                    <Phone size={18} className="inline mr-2" />Phone Number *
-                  </label>
-                  <input
-                    type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+1234567890"
-                  />
+                  <label className="block text-lg font-medium text-gray-700 mb-2"><Phone size={18} className="inline mr-2" />Phone Number *</label>
+                  <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+1234567890" />
                 </div>
-
-                {/* ── Company Name — pre-filled, locked ───────────────────────── */}
                 <div>
-                  <label className="block text-lg font-medium text-gray-700 mb-2">
-                    <Building2 size={18} className="inline mr-2" />Company Name
-                  </label>
+                  <label className="block text-lg font-medium text-gray-700 mb-2"><Building2 size={18} className="inline mr-2" />Company Name</label>
                   <div className="relative">
-                    <input
-                      type="text"
-                      value={companyName}
-                      readOnly
-                      disabled
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none font-medium"
-                    />
-                    {/* Lock badge */}
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-blue-100 text-blue-600 font-semibold px-2 py-0.5 rounded-full">
-                      Fixed
-                    </span>
+                    <input type="text" value={companyName} readOnly disabled
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none font-medium" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-blue-100 text-blue-600 font-semibold px-2 py-0.5 rounded-full">Fixed</span>
                   </div>
                   <p className="text-xs text-gray-400 mt-1 ml-1">Organisation conducting this test</p>
                 </div>
-
-                {/* Category Filter */}
                 <div className="md:col-span-2">
-                  <label className="block text-lg font-medium text-gray-700 mb-2">
-                    <Filter size={18} className="inline mr-2" />Test Category
-                  </label>
-                  <select
-                    value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
+                  <label className="block text-lg font-medium text-gray-700 mb-2"><Filter size={18} className="inline mr-2" />Test Category</label>
+                  <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="all">All Categories ({aptitudeQuestions.length} Questions)</option>
                     <option value="Logical">Logical Reasoning Only ({aptitudeQuestions.filter(q => q.category === 'Logical').length} Questions)</option>
                     <option value="Reasoning">Pure Reasoning Only ({aptitudeQuestions.filter(q => q.category === 'Reasoning').length} Questions)</option>
@@ -606,15 +544,13 @@ const Pgelecto = () => {
               {/* Category Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {[
-                  { cat: 'Logical',   icon: <Brain     size={32} className="text-blue-600 mx-auto mb-2" />,   bg: 'bg-blue-50',   text: 'text-blue-600',   label: 'text-blue-700'   },
+                  { cat: 'Logical',   icon: <Brain    size={32} className="text-blue-600 mx-auto mb-2" />,   bg: 'bg-blue-50',   text: 'text-blue-600',   label: 'text-blue-700'   },
                   { cat: 'Reasoning', icon: <Lightbulb size={32} className="text-indigo-600 mx-auto mb-2" />, bg: 'bg-indigo-50', text: 'text-indigo-600', label: 'text-indigo-700' },
                   { cat: 'Technical', icon: <Code      size={32} className="text-purple-600 mx-auto mb-2" />, bg: 'bg-purple-50', text: 'text-purple-600', label: 'text-purple-700' },
                 ].map(({ cat, icon, bg, text, label }) => (
                   <div key={cat} className={`${bg} p-4 rounded-lg text-center`}>
                     {icon}
-                    <div className={`text-2xl font-bold ${text}`}>
-                      {aptitudeQuestions.filter(q => q.category === cat).length}
-                    </div>
+                    <div className={`text-2xl font-bold ${text}`}>{aptitudeQuestions.filter(q => q.category === cat).length}</div>
                     <div className={`${label} font-medium`}>{cat}</div>
                     <div className="text-xs text-gray-500 mt-1">Questions</div>
                   </div>
@@ -623,9 +559,7 @@ const Pgelecto = () => {
 
               {/* Security Notice */}
               <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-                <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center">
-                  <Shield size={20} className="mr-2" /> Security Measures
-                </h3>
+                <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center"><Shield size={20} className="mr-2" />Security Measures</h3>
                 <ul className="list-disc list-inside text-red-700 space-y-1">
                   <li>Fullscreen mode is mandatory and enforced</li>
                   <li>Tab switching is prohibited (records violation)</li>
@@ -636,9 +570,7 @@ const Pgelecto = () => {
 
               {/* Test Info */}
               <div className="bg-blue-50 rounded-lg p-6 mb-8">
-                <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
-                  <FileText size={20} className="mr-2" /> Test Information
-                </h3>
+                <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center"><FileText size={20} className="mr-2" />Test Information</h3>
                 <ul className="list-disc list-inside text-blue-700 space-y-1">
                   <li>Total Questions: {filteredQuestions.length}</li>
                   <li>Time Limit: 60 minutes</li>
@@ -649,21 +581,15 @@ const Pgelecto = () => {
 
               {backendStatus === 'disconnected' && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center justify-center text-yellow-700">
-                  <WifiOff size={18} className="mr-2" />
-                  Backend offline. Results will be saved locally.
+                  <WifiOff size={18} className="mr-2" />Backend offline. Results will be saved locally and synced when connection restores.
                 </div>
               )}
 
-              <button
-                onClick={handleStartTest}
-                disabled={backendStatus === 'checking'}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center"
-              >
-                {backendStatus === 'checking' ? (
-                  <><Activity size={20} className="animate-spin mr-2" />Checking Connection...</>
-                ) : (
-                  <><Maximize2 size={20} className="mr-2" />Start Test</>
-                )}
+              <button onClick={handleStartTest} disabled={backendStatus === 'checking'}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center">
+                {backendStatus === 'checking'
+                  ? <><Activity size={20} className="animate-spin mr-2" />Checking Connection...</>
+                  : <><Maximize2 size={20} className="mr-2" />Start Test</>}
               </button>
             </div>
           </div>
@@ -672,153 +598,125 @@ const Pgelecto = () => {
     );
   }
 
-  // ─── Active Test ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ACTIVE TEST SCREEN
+  // ─────────────────────────────────────────────────────────────────────────────
   if (testStarted && !testCompleted) {
     const currentQ = filteredQuestions[currentQuestion];
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-6 justify-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
 
-            {/* Left Ad Column */}
-            
-
-            {/* Main Question Panel */}
-            <div className="lg:w-3/5 ">
-              <div className="bg-white rounded-2xl shadow-xl p-8 ">
-
-                {/* Top Bar */}
-                <div className="flex justify-between items-center mb-6 ">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                      <ClipboardList size={24} className="mr-2" /> Aptitude Test
-                    </h2>
-                    <p className="text-gray-600 flex items-center mt-1">
-                      <User size={14} className="mr-1" /> {userName}
-                    </p>
-                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${getBackendStatusColor()}`}>
-                      {getBackendStatusIcon()}{getBackendStatusText()}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-lg font-semibold flex items-center justify-end ${timeLeft < 300 ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>
-                      <Clock size={18} className="mr-1" />{formatTime(timeLeft)}
-                    </div>
-                    <div className="text-gray-600">Q {currentQuestion + 1} / {filteredQuestions.length}</div>
-                    <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-1 px-2 py-0.5 rounded-full ${
-                      violationCount === 0 ? 'bg-green-100 text-green-700' :
-                      violationCount === 1 ? 'bg-yellow-100 text-yellow-700' :
-                                             'bg-red-100 text-red-700 animate-pulse'
-                    }`}>
-                      <Shield size={11} />
-                      Violations: {violationCount}/3
-                    </div>
-                  </div>
+            {/* Top Bar */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center"><ClipboardList size={24} className="mr-2" />Aptitude Test</h2>
+                <p className="text-gray-600 flex items-center mt-1"><User size={14} className="mr-1" />{userName}</p>
+                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${getBackendStatusColor()}`}>
+                  {getBackendStatusIcon()}{getBackendStatusText()}
                 </div>
-
-                {violationCount === 2 && (
-                  <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm font-semibold px-4 py-2 rounded-lg mb-4 flex items-center gap-2">
-                    <AlertTriangle size={15} /> Final Warning: One more violation will terminate the test!
-                  </div>
-                )}
-
-                {/* Progress Bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }}
-                  />
+              </div>
+              <div className="text-right">
+                <div className={`text-lg font-semibold flex items-center justify-end ${timeLeft < 300 ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>
+                  <Clock size={18} className="mr-1" />{formatTime(timeLeft)}
                 </div>
-
-                {/* Question */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex gap-2">
-                      <span className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(currentQ.category)}`}>
-                        {getCategoryIcon(currentQ.category)}{currentQ.category}
-                      </span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(currentQ.difficulty)}`}>
-                        {currentQ.difficulty.toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-500">Q#{currentQ.id}</span>
-                  </div>
-
-                  <h3 className="text-xl font-semibold text-gray-800 mb-6 leading-relaxed whitespace-pre-line">
-                    {currentQ.question}
-                  </h3>
-
-                  <div className="space-y-3">
-                    {currentQ.options.map((option, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleAnswerSelect(option)}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
-                          selectedAnswer === option
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                        }`}
-                      >
-                        <span className="font-bold mr-3">{String.fromCharCode(65 + index)}.</span>
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Navigation */}
-                <div className="flex justify-between">
-                  <button
-                    onClick={() => {
-                      if (currentQuestion > 0) {
-                        const prevQ = filteredQuestions[currentQuestion - 1];
-                        const prevSaved = userAnswersRef.current.find(a => a.questionId === prevQ.id);
-                        setCurrentQuestion(c => c - 1);
-                        setSelectedAnswer(prevSaved ? prevSaved.selectedAnswer : '');
-                      }
-                    }}
-                    disabled={currentQuestion === 0}
-                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center"
-                  >
-                    <ChevronLeft size={18} className="mr-1" />Previous
-                  </button>
-                  <button
-                    onClick={handleNextQuestion}
-                    disabled={!selectedAnswer}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold flex items-center"
-                  >
-                    {currentQuestion === filteredQuestions.length - 1
-                      ? <><Flag size={18} className="mr-1" />Finish Test</>
-                      : <>Next Question<ChevronRight size={18} className="ml-1" /></>}
-                  </button>
-                </div>
-
-                <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-lg text-center text-sm">
-                  <Shield size={14} className="text-red-600 inline mr-1" />
-                  <span className="text-red-700 font-medium">
-                    Stay in fullscreen — do not switch tabs.{' '}
-                    {violationCount === 0 && 'Stay focused!'}
-                    {violationCount === 1 && 'Be careful!'}
-                    {violationCount === 2 && 'Last warning!'}
-                  </span>
+                <div className="text-gray-600">Q {currentQuestion + 1} / {filteredQuestions.length}</div>
+                <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-1 px-2 py-0.5 rounded-full ${
+                  violationCount === 0 ? 'bg-green-100 text-green-700' :
+                  violationCount === 1 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700 animate-pulse'
+                }`}>
+                  <Shield size={11} />Violations: {violationCount}/3
                 </div>
               </div>
             </div>
 
-          
+            {violationCount === 2 && (
+              <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm font-semibold px-4 py-2 rounded-lg mb-4 flex items-center gap-2">
+                <AlertTriangle size={15} />Final Warning: One more violation will terminate the test!
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
+              <div className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${((currentQuestion + 1) / filteredQuestions.length) * 100}%` }} />
+            </div>
+
+            {/* Question */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex gap-2">
+                  <span className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(currentQ.category)}`}>
+                    {getCategoryIcon(currentQ.category)}{currentQ.category}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(currentQ.difficulty)}`}>
+                    {currentQ.difficulty.toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-500">Q#{currentQ.id}</span>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-6 leading-relaxed whitespace-pre-line">{currentQ.question}</h3>
+              <div className="space-y-3">
+                {currentQ.options.map((option, index) => (
+                  <button key={index} onClick={() => handleAnswerSelect(option)}
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
+                      selectedAnswer === option
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                    }`}>
+                    <span className="font-bold mr-3">{String.fromCharCode(65 + index)}.</span>{option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex justify-between">
+              <button
+                onClick={() => {
+                  if (currentQuestion > 0) {
+                    const prevQ    = filteredQuestions[currentQuestion - 1];
+                    const prevSaved = userAnswersRef.current.find(a => a.questionId === prevQ.id);
+                    setCurrentQuestion(c => c - 1);
+                    setSelectedAnswer(prevSaved ? prevSaved.selectedAnswer : '');
+                  }
+                }}
+                disabled={currentQuestion === 0}
+                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center">
+                <ChevronLeft size={18} className="mr-1" />Previous
+              </button>
+              <button onClick={handleNextQuestion} disabled={!selectedAnswer}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold flex items-center">
+                {currentQuestion === filteredQuestions.length - 1
+                  ? <><Flag size={18} className="mr-1" />Finish Test</>
+                  : <>Next Question<ChevronRight size={18} className="ml-1" /></>}
+              </button>
+            </div>
+
+            <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-lg text-center text-sm">
+              <Shield size={14} className="text-red-600 inline mr-1" />
+              <span className="text-red-700 font-medium">
+                Stay in fullscreen — do not switch tabs.{' '}
+                {violationCount === 0 && 'Stay focused!'}
+                {violationCount === 1 && 'Be careful!'}
+                {violationCount === 2 && 'Last warning!'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // ─── Results Screen ───────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RESULTS SCREEN
+  // ─────────────────────────────────────────────────────────────────────────────
   if (testCompleted) {
     const categoryStats = getCategoryStats();
-    const finalScore = scoreRef.current;
-    const totalQ = filteredQuestions.length;
-    const percentage = totalQ > 0 ? ((finalScore / totalQ) * 100).toFixed(1) : '0.0';
+    const finalScore    = scoreRef.current;
+    const totalQ        = filteredQuestions.length;
+    const percentage    = totalQ > 0 ? ((finalScore / totalQ) * 100).toFixed(1) : '0.0';
 
     return (
       <>
@@ -835,22 +733,46 @@ const Pgelecto = () => {
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Test Completed!</h1>
                 <p className="text-gray-600">Congratulations {userName}!</p>
 
+                {/* ✅ Success message */}
                 {submissionSuccess && (
                   <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-center text-green-700">
                     <CheckCircle size={18} className="mr-2" />{submissionSuccess}
                   </div>
                 )}
-                {submissionError && (
-                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center justify-center text-yellow-700">
-                    <AlertTriangle size={18} className="mr-2" />{submissionError}
+
+                {/* ✅ Error message + Retry button */}
+                {submissionError && !submissionSuccess && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700">
+                    <div className="flex items-center justify-center mb-3">
+                      <AlertTriangle size={18} className="mr-2" />
+                      <span className="text-sm">{submissionError}</span>
+                    </div>
+                    <button
+                      onClick={handleRetrySubmission}
+                      disabled={submissionLoading || retrying}
+                      className="mx-auto flex items-center gap-2 px-5 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-bold rounded-lg transition disabled:opacity-50"
+                    >
+                      <RefreshCw size={16} className={submissionLoading || retrying ? 'animate-spin' : ''} />
+                      {submissionLoading || retrying ? 'Retrying...' : '🔄 Retry Submission'}
+                    </button>
+                    <p className="text-xs text-yellow-600 mt-2 text-center">
+                      Your answers are safely saved locally. Retry will sync to server.
+                    </p>
                   </div>
                 )}
+
+                {submissionLoading && !submissionError && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center text-blue-700">
+                    <Activity size={18} className="animate-spin mr-2" />Saving your results to server...
+                  </div>
+                )}
+
                 {violationCount > 0 && (
                   <p className="mt-2 font-semibold flex items-center justify-center text-orange-600">
-                    <AlertTriangle size={16} className="mr-1" />
-                    {violationCount} security violation(s) recorded.
+                    <AlertTriangle size={16} className="mr-1" />{violationCount} security violation(s) recorded.
                   </p>
                 )}
+
                 <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${getBackendStatusColor()}`}>
                   {getBackendStatusIcon()}{getBackendStatusText()}
                 </div>
@@ -863,9 +785,7 @@ const Pgelecto = () => {
                 <div className="text-2xl">{percentage}%</div>
                 <div className="text-sm mt-2 flex items-center justify-center">
                   <Clock size={14} className="mr-1" />
-                  Time Taken: {startTimeRef.current
-                    ? formatTime(Math.floor((Date.now() - startTimeRef.current) / 1000))
-                    : '—'}
+                  Time Taken: {startTimeRef.current ? formatTime(Math.floor((Date.now() - startTimeRef.current) / 1000)) : '—'}
                 </div>
               </div>
 
@@ -887,9 +807,7 @@ const Pgelecto = () => {
                         category === 'Reasoning' ? 'text-indigo-600' : 'text-purple-600'
                       }`}>{stats.correct}/{stats.total}</div>
                       <div className="font-medium text-gray-700">{category}</div>
-                      <div className="text-sm text-gray-500">
-                        {((stats.correct / stats.total) * 100).toFixed(1)}%
-                      </div>
+                      <div className="text-sm text-gray-500">{((stats.correct / stats.total) * 100).toFixed(1)}%</div>
                     </div>
                   )
                 )}
@@ -898,32 +816,23 @@ const Pgelecto = () => {
               {/* Google Form CTA */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 text-center">
                 <h3 className="text-xl font-bold text-yellow-800 mb-3 flex items-center justify-center">
-                  <FileText size={20} className="mr-2" /> Next Step: Complete Online Test Form
+                  <FileText size={20} className="mr-2" />Next Step: Complete Online Test Form
                 </h3>
-                <p className="text-yellow-700 mb-4">
-                  Click below to complete the official Google Form for your submission.
-                </p>
-                <button
-                  onClick={() => window.open(GOOGLE_FORM_URL, '_blank', 'noopener,noreferrer')}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center mx-auto"
-                >
-                  <Send size={18} className="mr-2" />Complete Google Form
-                  <ExternalLink size={14} className="ml-2" />
+                <p className="text-yellow-700 mb-4">Click below to complete the official Google Form for your submission.</p>
+                <button onClick={() => window.open(GOOGLE_FORM_URL, '_blank', 'noopener,noreferrer')}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center mx-auto">
+                  <Send size={18} className="mr-2" />Complete Google Form<ExternalLink size={14} className="ml-2" />
                 </button>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button
-                  onClick={resetTest}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center"
-                >
+                <button onClick={resetTest}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center">
                   <ClipboardList size={18} className="mr-2" />Take Test Again
                 </button>
-                <button
-                  onClick={() => window.print()}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center"
-                >
+                <button onClick={() => window.print()}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition flex items-center justify-center">
                   <Printer size={18} className="mr-2" />Print Results
                 </button>
               </div>

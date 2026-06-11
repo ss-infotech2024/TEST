@@ -3,7 +3,8 @@ import {
   ClipboardList, User, Mail, Phone, Filter, Clock, AlertTriangle,
   CheckCircle, Shield, Award, BookOpen, Brain,
   Lightbulb, Users, ChevronLeft, ChevronRight, Printer, ExternalLink,
-  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code
+  Activity, WifiOff, Maximize2, Flag, Send, FileText, X, Code, Building2,
+  RefreshCw
 } from 'lucide-react';
 import { aptitudeQuestions } from '../aptitudeq';
 import image1 from "../assets/newcrt.jpeg";
@@ -16,23 +17,28 @@ const DEFAULT_LEFT_IMAGES = [image1, image2];
 const DEFAULT_RIGHT_IMAGES = [image3, image4];
 const POPUP_IMAGES = [popimg, image4];
 
-// ─── Navbar ──────────────────────────────────────────────────────────────────
+const COMPANY_NAME = 'SS Infotech';
+const BASE_URL = 'https://ssinfotech-0x5s.onrender.com';
+const SUBMIT_ENDPOINT = `${BASE_URL}/api/submissions/submit`;
+const HEALTH_ENDPOINTS = [
+  `${BASE_URL}/health`,
+  `${BASE_URL}/api/health`,
+  `${BASE_URL}/api/v1/health`,
+];
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfYourFormID/viewform';
+const VIOLATION_COOLDOWN_MS = 2000;
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
 const Navbar = () => (
-  <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+  <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 h-[90px]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between h-16">
-        {/* Logo + Company Name */}
         <div className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <Brain size={22} className="text-white" />
+          <div className="h-[100px] w-[100px]">
+            <img src="sslogo.jpg" alt="" />
           </div>
-          <div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">SS Infotech</span>
-            <span className="block text-xs text-gray-500 leading-none">Aptitude Assessment Portal</span>
-          </div>
+         
         </div>
-
-        {/* Right side */}
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline-flex items-center gap-1.5 text-sm text-gray-500">
             <ClipboardList size={15} />
@@ -40,7 +46,7 @@ const Navbar = () => (
           </span>
           <div className="h-5 w-px bg-gray-200 hidden sm:block" />
           <span className="text-xs font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-            Powered by SS Infotech
+            Powered by {COMPANY_NAME}
           </span>
         </div>
       </div>
@@ -48,10 +54,69 @@ const Navbar = () => (
   </nav>
 );
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const generateSubmissionId = () =>
+  'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+const formatTime = seconds => {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+};
+
+// ─── localStorage helpers (safe wrappers) ─────────────────────────────────────
+const LS_KEY = 'aptitudeTestSubmissions';
+
+const lsRead = () => {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const lsSave = (submission, synced = false) => {
+  try {
+    const list = lsRead();
+    const entry = {
+      ...submission,
+      localSaveTime: new Date().toISOString(),
+      syncedToBackend: synced,
+    };
+    const idx = list.findIndex(s => s.submissionId === submission.submissionId);
+    if (idx !== -1) list[idx] = entry;
+    else list.unshift(entry);
+    localStorage.setItem(LS_KEY, JSON.stringify(list));
+    console.log('✅ Saved to localStorage:', entry.submissionId);
+    return true;
+  } catch (e) {
+    console.error('❌ localStorage save failed:', e);
+    return false;
+  }
+};
+
+const lsMarkSynced = (submissionId) => {
+  try {
+    const list = lsRead().map(s =>
+      s.submissionId === submissionId ? { ...s, syncedToBackend: true } : s
+    );
+    localStorage.setItem(LS_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('❌ localStorage mark-synced failed:', e);
+  }
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const AptitudeTest = () => {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [companyName] = useState(COMPANY_NAME);
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [score, setScore] = useState(0);
@@ -62,12 +127,17 @@ const AptitudeTest = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [violationCount, setViolationCount] = useState(0);
   const [showPopup, setShowPopup] = useState(true);
+
+  // submission states
   const [submissionLoading, setSubmissionLoading] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [submissionSuccess, setSubmissionSuccess] = useState('');
   const [backendStatus, setBackendStatus] = useState('checking');
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [localSaved, setLocalSaved] = useState(false); // ✅ NEW: tracks local save
 
+  // refs (survive re-renders / closures)
   const scoreRef = useRef(0);
   const userAnswersRef = useRef([]);
   const violationCountRef = useRef(0);
@@ -76,111 +146,111 @@ const AptitudeTest = () => {
   const startTimeRef = useRef(null);
   const lastViolationTimeRef = useRef(0);
   const violationCooldownRef = useRef(false);
+  const submissionDataRef = useRef(null); // ✅ NEW: stores submission for retry
 
   const filteredQuestions = categoryFilter === 'all'
     ? aptitudeQuestions
     : aptitudeQuestions.filter(q => q.category === categoryFilter);
 
-  const SUBMIT_ENDPOINT = 'https://ssinfotech-0x5s.onrender.com/api/submissions/submit';
-  const HEALTH_ENDPOINTS = [
-    'https://ssinfotech-0x5s.onrender.com/health',
-    'https://ssinfotech-0x5s.onrender.com/api/health',
-  ];
-  const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfYourFormID/viewform';
-  const VIOLATION_COOLDOWN_MS = 2000;
-
-  const generateSubmissionId = () =>
-    'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-
-  const formatTime = seconds => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
-  const enterFullscreen = useCallback(async () => {
-    try {
-      const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-      else if (el.msRequestFullscreen) await el.msRequestFullscreen();
-    } catch {
-      alert('Please allow fullscreen mode. Press F11 to enter manually.');
-    }
-  }, []);
-
-  const exitFullscreen = useCallback(() => {
-    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if (document.msExitFullscreen) document.msExitFullscreen();
-  }, []);
-
-  const testBackendConnection = async () => {
+  // ─── Backend connection ──────────────────────────────────────────────────
+  const testBackendConnection = useCallback(async () => {
     for (const endpoint of HEALTH_ENDPOINTS) {
       try {
-        const res = await fetch(endpoint, { method: 'GET', signal: AbortSignal.timeout(5000) });
-        if (res.ok) { setBackendStatus('connected'); return true; }
+        const res = await fetch(endpoint, {
+          method: 'GET',
+          signal: AbortSignal.timeout(8000),
+        });
+        if (res.ok) {
+          setBackendStatus('connected');
+          return true;
+        }
       } catch { }
     }
     setBackendStatus('disconnected');
     return false;
-  };
+  }, []);
 
-  const saveToLocalStorage = (submission, synced = false) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem('aptitudeTestSubmissions') || '[]');
-      const idx = existing.findIndex(s => s.submissionId === submission.submissionId);
-      const entry = { ...submission, localSaveTime: new Date().toISOString(), syncedToBackend: synced };
-      if (idx !== -1) existing[idx] = entry;
-      else existing.unshift(entry);
-      localStorage.setItem('aptitudeTestSubmissions', JSON.stringify(existing));
-    } catch (e) { console.error('localStorage error:', e); }
-  };
-
-  const submitTestToBackend = async submissionData => {
+  // ─── Submit to backend ───────────────────────────────────────────────────
+  const submitToBackend = useCallback(async (submissionData) => {
     try {
       setSubmissionLoading(true);
       setSubmissionError('');
       setSubmissionSuccess('');
+
+      console.log('📤 Submitting to:', SUBMIT_ENDPOINT);
+
       const res = await fetch(SUBMIT_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify(submissionData),
+        signal: AbortSignal.timeout(20000), // 20s — Render cold-start can be slow
       });
-      const result = await res.json();
+
+      let result;
+      try { result = await res.json(); }
+      catch { result = { success: false, error: `Non-JSON response (HTTP ${res.status})` }; }
+
+      console.log('📬 Backend response:', res.status, result);
+
       if (res.ok && result.success) {
-        setSubmissionSuccess('Your test results have been successfully recorded!');
+        setSubmissionSuccess('Your test results have been successfully recorded on the server!');
         setBackendStatus('connected');
-        return { ...result, synced: true };
+        lsMarkSynced(submissionData.submissionId);
+        return true;
       }
-      throw new Error(result.error || 'Submission failed');
+
+      throw new Error(result.error || result.message || `Server returned ${res.status}`);
+
     } catch (error) {
-      setSubmissionError('Results saved locally. Will sync when connection is restored.');
+      console.error('❌ Backend submission failed:', error.name, error.message);
+
+      const isNetworkError =
+        error.name === 'TimeoutError' ||
+        error.name === 'AbortError' ||
+        error.message.toLowerCase().includes('failed to fetch') ||
+        error.message.toLowerCase().includes('networkerror');
+
+      if (isNetworkError) {
+        setSubmissionError(
+          `Server is unreachable (${BASE_URL}). This usually means the server is starting up — wait 30 seconds and click "Retry Submission".`
+        );
+      } else {
+        setSubmissionError(`Submission error: ${error.message}. Click "Retry Submission" to try again.`);
+      }
+
       setBackendStatus('disconnected');
-      return { synced: false, error: error.message };
+      return false;
     } finally {
       setSubmissionLoading(false);
     }
-  };
+  }, []);
 
-  const syncPendingSubmissions = async () => {
-    const pending = JSON.parse(localStorage.getItem('aptitudeTestSubmissions') || '[]')
-      .filter(s => !s.syncedToBackend);
-    for (const sub of pending) {
-      const result = await submitTestToBackend(sub);
-      if (result.synced) {
-        const updated = JSON.parse(localStorage.getItem('aptitudeTestSubmissions') || '[]')
-          .map(s => s.submissionId === sub.submissionId ? { ...s, syncedToBackend: true } : s);
-        localStorage.setItem('aptitudeTestSubmissions', JSON.stringify(updated));
-      }
+  // ─── Retry handler ───────────────────────────────────────────────────────
+  const handleRetrySubmission = useCallback(async () => {
+    // Use the in-memory ref first, then fall back to localStorage
+    const data = submissionDataRef.current || lsRead().find(s => !s.syncedToBackend);
+    if (!data) {
+      setSubmissionError('No pending submission found.');
+      return;
     }
-  };
+    setRetrying(true);
+    const success = await submitToBackend(data);
+    if (success) {
+      setSubmissionError('');
+    }
+    setRetrying(false);
+  }, [submitToBackend]);
 
+  // ─── Core test completion ────────────────────────────────────────────────
   const handleTestCompletion = useCallback(async (finalScore, finalAnswers) => {
+    // Guard: only run once
     if (testCompletedRef.current || hasSubmitted) return;
     testCompletedRef.current = true;
 
+    // Stop timer immediately
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
@@ -196,6 +266,7 @@ const AptitudeTest = () => {
       userName: userName.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
+      company: companyName.trim(),
       score: accurateScore,
       totalQuestions: filteredQuestions.length,
       userAnswers: accurateAnswers,
@@ -206,16 +277,47 @@ const AptitudeTest = () => {
       submissionId: generateSubmissionId(),
     };
 
-    saveToLocalStorage(submissionData, false);
-    const result = await submitTestToBackend(submissionData);
-    saveToLocalStorage(submissionData, result.synced);
+    // ✅ STEP 1: Save to localStorage immediately — before any async work
+    const savedLocally = lsSave(submissionData, false);
+    setLocalSaved(savedLocally);
+    submissionDataRef.current = submissionData; // keep ref for retry
 
+    // ✅ STEP 2: Update UI to show results immediately
     setHasSubmitted(true);
     setTestCompleted(true);
     setTestStarted(false);
     exitFullscreen();
     removeSecurityListeners();
-  }, [userName, email, phone, filteredQuestions.length, categoryFilter, hasSubmitted, exitFullscreen]);
+
+    // ✅ STEP 3: Attempt backend submission (non-blocking — UI is already shown)
+    const synced = await submitToBackend(submissionData);
+    if (synced) {
+      lsSave(submissionData, true); // update LS record to mark synced
+    }
+  }, [userName, email, phone, companyName, filteredQuestions.length, categoryFilter,
+      hasSubmitted, timeLeft, submitToBackend]);
+
+  // ─── Security / fullscreen ───────────────────────────────────────────────
+  const enterFullscreen = useCallback(async () => {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+    } catch {
+      alert('Please allow fullscreen mode. Press F11 to enter manually.');
+    }
+  }, []);
+
+  const exitFullscreen = useCallback(() => {
+    try {
+      if (document.fullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+      }
+    } catch { }
+  }, []);
 
   const handleViolation = useCallback(() => {
     if (testCompletedRef.current) return;
@@ -298,6 +400,7 @@ const AptitudeTest = () => {
     document.body.style.webkitUserSelect = 'none';
   }, [visibilityHandler, blurHandler, fullscreenChangeHandler, keydownHandler, contextMenuHandler, beforeUnloadHandler]);
 
+  // ─── Timer ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!testStarted || testCompletedRef.current || timeLeft <= 0) return;
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -322,6 +425,7 @@ const AptitudeTest = () => {
     };
   }, [testStarted, handleTestCompletion]);
 
+  // ─── Security setup + backend ping ───────────────────────────────────────
   useEffect(() => {
     if (testStarted && !testCompletedRef.current) {
       setupSecurityListeners();
@@ -335,15 +439,40 @@ const AptitudeTest = () => {
     };
   }, [testStarted, setupSecurityListeners, removeSecurityListeners, enterFullscreen]);
 
+  // ─── Initial backend check + periodic sync ───────────────────────────────
   useEffect(() => {
+    // Wake up Render on page load
     testBackendConnection();
-    const interval = setInterval(() => {
-      testBackendConnection();
-      if (!testStarted && !testCompletedRef.current) syncPendingSubmissions();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [testStarted]);
 
+    const interval = setInterval(async () => {
+      const isAlive = await testBackendConnection();
+      // Try to sync any unsynced local submissions when backend comes online
+      if (isAlive && !testStarted && !testCompletedRef.current) {
+        const pending = lsRead().filter(s => !s.syncedToBackend);
+        for (const sub of pending) {
+          try {
+            const res = await fetch(SUBMIT_ENDPOINT, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(sub),
+              signal: AbortSignal.timeout(15000),
+            });
+            const result = await res.json().catch(() => ({}));
+            if (res.ok && result.success) {
+              lsMarkSynced(sub.submissionId);
+              console.log('✅ Background sync succeeded for:', sub.submissionId);
+            }
+          } catch (e) {
+            console.log('⏳ Background sync pending for:', sub.submissionId);
+          }
+        }
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [testStarted, testBackendConnection]);
+
+  // ─── Validation & start ───────────────────────────────────────────────────
   const validateUserInfo = () => {
     if (!userName.trim()) { alert('Please enter your full name'); return false; }
     if (!email.trim()) { alert('Please enter your email address'); return false; }
@@ -352,7 +481,7 @@ const AptitudeTest = () => {
       alert('Please enter a valid email address'); return false;
     }
     if (!/^[0-9+\-\s()]{10,15}$/.test(phone.trim())) {
-      alert('Please enter a valid phone number'); return false;
+      alert('Please enter a valid phone number (10–15 digits)'); return false;
     }
     return true;
   };
@@ -360,6 +489,7 @@ const AptitudeTest = () => {
   const handleStartTest = async () => {
     if (!validateUserInfo()) return;
 
+    // Reset all refs
     testCompletedRef.current = false;
     scoreRef.current = 0;
     userAnswersRef.current = [];
@@ -367,6 +497,7 @@ const AptitudeTest = () => {
     startTimeRef.current = Date.now();
     lastViolationTimeRef.current = 0;
     violationCooldownRef.current = false;
+    submissionDataRef.current = null;
 
     setTestStarted(true);
     setUserAnswers([]);
@@ -375,14 +506,17 @@ const AptitudeTest = () => {
     setSelectedAnswer('');
     setViolationCount(0);
     setHasSubmitted(false);
+    setLocalSaved(false);
     setTimeLeft(3600);
     setSubmissionError('');
     setSubmissionSuccess('');
     setShowPopup(false);
 
-    await testBackendConnection();
+    // Fire a wake-up ping to Render (don't await — don't block test start)
+    fetch(`${BASE_URL}/health`).catch(() => {});
   };
 
+  // ─── Answer handling ──────────────────────────────────────────────────────
   const handleAnswerSelect = answer => {
     if (!testStarted || testCompletedRef.current) return;
     setSelectedAnswer(answer);
@@ -432,6 +566,7 @@ const AptitudeTest = () => {
     }
   };
 
+  // ─── Reset ────────────────────────────────────────────────────────────────
   const resetTest = () => {
     testCompletedRef.current = false;
     scoreRef.current = 0;
@@ -440,6 +575,7 @@ const AptitudeTest = () => {
     startTimeRef.current = null;
     lastViolationTimeRef.current = 0;
     violationCooldownRef.current = false;
+    submissionDataRef.current = null;
 
     setUserName('');
     setEmail('');
@@ -457,40 +593,42 @@ const AptitudeTest = () => {
     setSubmissionSuccess('');
     setBackendStatus('checking');
     setHasSubmitted(false);
+    setLocalSaved(false);
     setShowPopup(true);
     testBackendConnection();
   };
 
+  // ─── Style helpers ────────────────────────────────────────────────────────
   const getDifficultyColor = d =>
     d === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-    d === 'hard'   ? 'bg-red-100 text-red-800'    : 'bg-green-100 text-green-800';
+    d === 'hard'   ? 'bg-red-100 text-red-800'       : 'bg-green-100 text-green-800';
 
   const getCategoryColor = c =>
-    c === 'Logical'   ? 'bg-blue-100 text-blue-800'   :
+    c === 'Logical'   ? 'bg-blue-100 text-blue-800'    :
     c === 'Reasoning' ? 'bg-indigo-100 text-indigo-800' :
     c === 'Technical' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
 
   const getCategoryIcon = c => {
     switch (c) {
-      case 'Logical':   return <Brain    size={16} className="mr-1" />;
+      case 'Logical':   return <Brain     size={16} className="mr-1" />;
       case 'Reasoning': return <Lightbulb size={16} className="mr-1" />;
-      case 'Technical': return <Code     size={16} className="mr-1" />;
+      case 'Technical': return <Code      size={16} className="mr-1" />;
       default:          return <BookOpen  size={16} className="mr-1" />;
     }
   };
 
   const getBackendStatusColor = () =>
-    backendStatus === 'connected'    ? 'bg-green-100 text-green-800'  :
+    backendStatus === 'connected'    ? 'bg-green-100 text-green-800'   :
     backendStatus === 'disconnected' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800';
 
   const getBackendStatusIcon = () =>
     backendStatus === 'connected'    ? <CheckCircle size={14} className="mr-1" /> :
     backendStatus === 'disconnected' ? <WifiOff     size={14} className="mr-1" /> :
-                                      <Activity    size={14} className="mr-1" />;
+                                      <Activity    size={14} className="mr-1 animate-spin" />;
 
   const getBackendStatusText = () =>
-    backendStatus === 'connected'    ? 'Connected'   :
-    backendStatus === 'disconnected' ? 'Offline Mode' : 'Checking...';
+    backendStatus === 'connected'    ? 'Server Connected'  :
+    backendStatus === 'disconnected' ? 'Offline Mode'      : 'Checking Server...';
 
   const getCategoryStats = () => {
     const stats = {
@@ -507,7 +645,7 @@ const AptitudeTest = () => {
     return stats;
   };
 
-  // ─── Popup ──────────────────────────────────────────────────────────────────
+  // ─── Popup ────────────────────────────────────────────────────────────────
   const PopupModal = () => {
     if (!showPopup) return null;
     return (
@@ -522,7 +660,6 @@ const AptitudeTest = () => {
               <X size={20} />
             </button>
           </div>
-
           <div className="p-6">
             <div className="flex gap-6 justify-center items-center">
               {POPUP_IMAGES.map((img, idx) => (
@@ -532,13 +669,12 @@ const AptitudeTest = () => {
               ))}
             </div>
           </div>
-
           <div className="px-6 py-4 border-t border-gray-200 flex justify-center">
             <button
               onClick={() => setShowPopup(false)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition flex items-center gap-2"
             >
-              <CheckCircle size={16} /> Continue
+              <CheckCircle size={16} /> I Understand, Continue
             </button>
           </div>
         </div>
@@ -546,7 +682,9 @@ const AptitudeTest = () => {
     );
   };
 
-  // ─── Registration / Landing ──────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SCREEN 1 — Registration
+  // ═══════════════════════════════════════════════════════════════════════════
   if (!testStarted && !testCompleted) {
     return (
       <>
@@ -564,15 +702,31 @@ const AptitudeTest = () => {
                   </div>
                 </div>
                 <h1 className="text-4xl font-bold text-gray-800 mb-2">Aptitude Assessment Test</h1>
-                <p className="text-gray-600">Comprehensive evaluation of your skills — by <span className="font-semibold text-blue-700">SS Infotech</span></p>
+                <p className="text-gray-600">
+                  Comprehensive evaluation of your skills — by{' '}
+                  <span className="font-semibold text-blue-700">{COMPANY_NAME}</span>
+                </p>
+              </div>
+
+              {/* Server status banner */}
+              <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg mb-6 text-sm font-medium ${getBackendStatusColor()}`}>
+                {getBackendStatusIcon()}{getBackendStatusText()}
+                {backendStatus === 'disconnected' && (
+                  <button
+                    onClick={testBackendConnection}
+                    className="ml-2 underline text-yellow-700 hover:text-yellow-900 text-xs"
+                  >
+                    Retry
+                  </button>
+                )}
               </div>
 
               {/* User Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {[
-                  { label: 'Full Name',     icon: <User  size={18} className="inline mr-2" />, value: userName, set: setUserName, type: 'text',  placeholder: 'John Doe' },
-                  { label: 'Email',         icon: <Mail  size={18} className="inline mr-2" />, value: email,    set: setEmail,    type: 'email', placeholder: 'john@example.com' },
-                  { label: 'Phone Number',  icon: <Phone size={18} className="inline mr-2" />, value: phone,    set: setPhone,    type: 'tel',   placeholder: '+1234567890' },
+                  { label: 'Full Name',    icon: <User  size={18} className="inline mr-2" />, value: userName, set: setUserName, type: 'text',  placeholder: 'John Doe' },
+                  { label: 'Email',        icon: <Mail  size={18} className="inline mr-2" />, value: email,    set: setEmail,    type: 'email', placeholder: 'john@example.com' },
+                  { label: 'Phone Number', icon: <Phone size={18} className="inline mr-2" />, value: phone,    set: setPhone,    type: 'tel',   placeholder: '+91 9876543210' },
                 ].map(({ label, icon, value, set, type, placeholder }) => (
                   <div key={label}>
                     <label className="block text-lg font-medium text-gray-700 mb-2">{icon}{label} *</label>
@@ -584,23 +738,40 @@ const AptitudeTest = () => {
                   </div>
                 ))}
 
+                {/* Company (read-only) */}
+                <div>
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
+                    <Building2 size={18} className="inline mr-2" />Company Name
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text" value={companyName} readOnly disabled
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed select-none font-medium"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-blue-100 text-blue-600 font-semibold px-2 py-0.5 rounded-full">Fixed</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 ml-1">Organisation conducting this test</p>
+                </div>
+
+                {/* Category filter */}
                 <div>
                   <label className="block text-lg font-medium text-gray-700 mb-2">
                     <Filter size={18} className="inline mr-2" />Test Category
                   </label>
                   <select
-                    value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                    value={categoryFilter}
+                    onChange={e => setCategoryFilter(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Categories ({aptitudeQuestions.length} Questions)</option>
-                    <option value="Logical">Logical Reasoning Only ({aptitudeQuestions.filter(q => q.category === 'Logical').length} Questions)</option>
-                    <option value="Reasoning">Pure Reasoning Only ({aptitudeQuestions.filter(q => q.category === 'Reasoning').length} Questions)</option>
-                    <option value="Technical">Technical Only ({aptitudeQuestions.filter(q => q.category === 'Technical').length} Questions)</option>
+                    <option value="Logical">Logical Reasoning ({aptitudeQuestions.filter(q => q.category === 'Logical').length} Questions)</option>
+                    <option value="Reasoning">Pure Reasoning ({aptitudeQuestions.filter(q => q.category === 'Reasoning').length} Questions)</option>
+                    <option value="Technical">Technical ({aptitudeQuestions.filter(q => q.category === 'Technical').length} Questions)</option>
                   </select>
                 </div>
               </div>
 
-              {/* Category Stats */}
+              {/* Category stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {[
                   { cat: 'Logical',   icon: <Brain     size={32} className="text-blue-600 mx-auto mb-2" />,   bg: 'bg-blue-50',   text: 'text-blue-600',   label: 'text-blue-700'   },
@@ -618,8 +789,8 @@ const AptitudeTest = () => {
                 ))}
               </div>
 
-              {/* Security Notice */}
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+              {/* Security notice */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
                 <h3 className="text-lg font-semibold text-red-800 mb-2 flex items-center">
                   <Shield size={20} className="mr-2" /> Security Measures
                 </h3>
@@ -631,7 +802,7 @@ const AptitudeTest = () => {
                 </ul>
               </div>
 
-              {/* Test Info */}
+              {/* Test info */}
               <div className="bg-blue-50 rounded-lg p-6 mb-8">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
                   <FileText size={20} className="mr-2" /> Test Information
@@ -640,27 +811,22 @@ const AptitudeTest = () => {
                   <li>Total Questions: {filteredQuestions.length}</li>
                   <li>Time Limit: 60 minutes</li>
                   <li>Multiple choice — no negative marking</li>
-                  <li>Results auto-saved locally and to server</li>
+                  <li>Answers saved locally first, then synced to server</li>
                 </ul>
               </div>
 
               {backendStatus === 'disconnected' && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center justify-center text-yellow-700">
-                  <WifiOff size={18} className="mr-2" />
-                  Backend offline. Results will be saved locally.
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center text-yellow-700">
+                  <WifiOff size={18} className="mr-2 flex-shrink-0" />
+                  <span>Server is offline. <strong>You can still take the test</strong> — answers are saved locally and will sync automatically when the server comes back online.</span>
                 </div>
               )}
 
               <button
                 onClick={handleStartTest}
-                disabled={backendStatus === 'checking'}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 flex items-center justify-center"
               >
-                {backendStatus === 'checking' ? (
-                  <><Activity size={20} className="animate-spin mr-2" />Checking Connection...</>
-                ) : (
-                  <><Maximize2 size={20} className="mr-2" />Start Test</>
-                )}
+                <Maximize2 size={20} className="mr-2" />Start Test (Fullscreen)
               </button>
             </div>
           </div>
@@ -669,30 +835,31 @@ const AptitudeTest = () => {
     );
   }
 
-  // ─── Active Test ─────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SCREEN 2 — Active Test
+  // ═══════════════════════════════════════════════════════════════════════════
   if (testStarted && !testCompleted) {
     const currentQ = filteredQuestions[currentQuestion];
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-6">
 
-            {/* Left Ad Column */}
+            {/* Left ads */}
             <div className="lg:w-1/5 space-y-6">
               {DEFAULT_LEFT_IMAGES.map((img, idx) => (
                 <div key={`left-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
-                  <img src={img} alt={`Advertisement ${idx + 1}`} className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300" />
+                  <img src={img} alt={`Ad ${idx + 1}`} className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300" />
                 </div>
               ))}
             </div>
 
-            {/* Main Question Panel */}
+            {/* Main panel */}
             <div className="lg:w-3/5">
               <div className="bg-white rounded-2xl shadow-xl p-8">
 
-                {/* Top Bar */}
+                {/* Top bar */}
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -710,7 +877,6 @@ const AptitudeTest = () => {
                       <Clock size={18} className="mr-1" />{formatTime(timeLeft)}
                     </div>
                     <div className="text-gray-600">Q {currentQuestion + 1} / {filteredQuestions.length}</div>
-                    {/* Compact violation indicator — replaces the top banner */}
                     <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-1 px-2 py-0.5 rounded-full ${
                       violationCount === 0 ? 'bg-green-100 text-green-700' :
                       violationCount === 1 ? 'bg-yellow-100 text-yellow-700' :
@@ -728,7 +894,7 @@ const AptitudeTest = () => {
                   </div>
                 )}
 
-                {/* Progress Bar */}
+                {/* Progress bar */}
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
@@ -811,11 +977,11 @@ const AptitudeTest = () => {
               </div>
             </div>
 
-            {/* Right Ad Column */}
+            {/* Right ads */}
             <div className="lg:w-1/5 space-y-6">
               {DEFAULT_RIGHT_IMAGES.map((img, idx) => (
                 <div key={`right-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden">
-                  <img src={img} alt={`Advertisement ${idx + 1}`} className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300" />
+                  <img src={img} alt={`Ad ${idx + 1}`} className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300" />
                 </div>
               ))}
             </div>
@@ -825,7 +991,9 @@ const AptitudeTest = () => {
     );
   }
 
-  // ─── Results Screen ───────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SCREEN 3 — Results
+  // ═══════════════════════════════════════════════════════════════════════════
   if (testCompleted) {
     const categoryStats = getCategoryStats();
     const finalScore = scoreRef.current;
@@ -839,36 +1007,71 @@ const AptitudeTest = () => {
           <div className="max-w-6xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8">
 
-              {/* Completion Header */}
+              {/* Header */}
               <div className="text-center mb-8">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Award size={40} className="text-green-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Test Completed!</h1>
-                <p className="text-gray-600">Congratulations {userName}!</p>
+                <p className="text-gray-600">Congratulations, {userName}!</p>
 
+                {/* ✅ Local save confirmation */}
+                {localSaved && !submissionSuccess && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center text-blue-700 text-sm">
+                    <CheckCircle size={16} className="mr-2 flex-shrink-0" />
+                    Your answers are safely saved on this device.
+                    {submissionLoading && <span className="ml-2 flex items-center gap-1"><Activity size={14} className="animate-spin" />Syncing to server...</span>}
+                  </div>
+                )}
+
+                {/* ✅ Server success */}
                 {submissionSuccess && (
                   <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-center text-green-700">
                     <CheckCircle size={18} className="mr-2" />{submissionSuccess}
                   </div>
                 )}
-                {submissionError && (
-                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center justify-center text-yellow-700">
-                    <AlertTriangle size={18} className="mr-2" />{submissionError}
+
+                {/* ✅ Server error + retry */}
+                {submissionError && !submissionSuccess && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2 text-yellow-800 text-sm mb-3">
+                      <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" />
+                      <span>{submissionError}</span>
+                    </div>
+                    <button
+                      onClick={handleRetrySubmission}
+                      disabled={submissionLoading || retrying}
+                      className="mx-auto flex items-center gap-2 px-5 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-bold rounded-lg transition disabled:opacity-50"
+                    >
+                      <RefreshCw size={16} className={submissionLoading || retrying ? 'animate-spin' : ''} />
+                      {submissionLoading || retrying ? 'Retrying...' : 'Retry Submission'}
+                    </button>
+                    <p className="text-xs text-yellow-600 mt-2 text-center">
+                      Your answers are saved locally. Retry syncs them to the server.
+                    </p>
                   </div>
                 )}
+
+                {/* Uploading spinner (no error yet) */}
+                {submissionLoading && !submissionError && !submissionSuccess && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center text-blue-700">
+                    <Activity size={18} className="animate-spin mr-2" />Saving results to server...
+                  </div>
+                )}
+
                 {violationCount > 0 && (
                   <p className="mt-2 font-semibold flex items-center justify-center text-orange-600">
                     <AlertTriangle size={16} className="mr-1" />
                     {violationCount} security violation(s) recorded.
                   </p>
                 )}
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${getBackendStatusColor()}`}>
+
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-3 ${getBackendStatusColor()}`}>
                   {getBackendStatusIcon()}{getBackendStatusText()}
                 </div>
               </div>
 
-              {/* Score Banner */}
+              {/* Score banner */}
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-white text-center mb-8">
                 <h2 className="text-2xl font-bold mb-4">Your Overall Score</h2>
                 <div className="text-6xl font-bold mb-2">{finalScore}/{totalQ}</div>
@@ -881,7 +1084,7 @@ const AptitudeTest = () => {
                 </div>
               </div>
 
-              {/* Per-Category Breakdown */}
+              {/* Category breakdown */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {Object.entries(categoryStats).map(([category, stats]) =>
                   stats.total > 0 && (
@@ -924,7 +1127,7 @@ const AptitudeTest = () => {
                 </button>
               </div>
 
-              {/* Action Buttons */}
+              {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   onClick={resetTest}
@@ -939,6 +1142,7 @@ const AptitudeTest = () => {
                   <Printer size={18} className="mr-2" />Print Results
                 </button>
               </div>
+
             </div>
           </div>
         </div>

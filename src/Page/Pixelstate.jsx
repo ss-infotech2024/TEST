@@ -195,7 +195,7 @@ const Pixelstate = () => {
       userName: userName.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
-      companyName,                          // ← included in submission
+      company: companyName.trim(),                           // ← included in submission
       score: accurateScore,
       totalQuestions: filteredQuestions.length,
       userAnswers: accurateAnswers,
